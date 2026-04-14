@@ -1,0 +1,90 @@
+# Ground-truth file for CIA evaluation on CIASample.java
+# Format:
+#   CHANGE_POINT: <node-counter>
+#   IDEAL: <space-separated list of impacted node-counters>
+#
+# Node-counter ↔ statement mapping for compute():
+#   0  int sum = 0
+#   1  int i = 1
+#   2  int n = 10
+#   3  int threshold = 50
+#   4  while (i <= n)            [loop condition]
+#   5  sum = sum + i
+#   6  i++
+#   7  int result = sum
+#   8  if (result > threshold)
+#   9  result = threshold
+#  10  return result
+#
+# Node-counter ↔ statement mapping for min():
+#  11  int a = x
+#  12  int b = y
+#  13  if (a > b)
+#  14  int temp = a
+#  15  a = b
+#  16  b = temp
+#  17  return a
+#
+# -----------------------------------------------------------------------
+# MANUAL ANALYSIS REASONING
+# -----------------------------------------------------------------------
+#
+# Change point 1 (int i = 1):
+#   i is used directly in:
+#     4 (while i <= n)   <- data dep on i
+#     5 (sum = sum + i)  <- data dep on i; but 5 is control-dep on 4
+#     6 (i++)            <- data dep on i (reads i); control-dep on 4
+#   i++ redefines i and feeds back into 4 (loop-carried data dep).
+#   4 has a data dep into 5 (control edge, since 5 is in the loop body).
+#   5 feeds into 7 (data: sum); 7 feeds into 8 (data: result);
+#   8 controls 9; 9 and 7 feed into 10 (data: result).
+#   In summary: changing i's initial value propagates to everything that
+#   depends on the loop iteration count or the accumulated sum.
+#   Ideal impacted: 4, 5, 6, 7, 8, 9, 10
+#
+CHANGE_POINT: 1
+IDEAL: 4 5 6 7 8 9 10
+
+# -----------------------------------------------------------------------
+# Change point 3 (int threshold = 50):
+#   threshold is used in:
+#     8  if (result > threshold)  <- data dep
+#     9  result = threshold       <- data dep (RHS)
+#   8 controls 9 (control dep).
+#   9 feeds into 10 (data: result).
+#   sum/i/n/loop are NOT affected; the only impacted statements are
+#   the if-condition, its then-branch assignment, and the return.
+#   Ideal impacted: 8, 9, 10
+#
+CHANGE_POINT: 3
+IDEAL: 8 9 10
+
+# -----------------------------------------------------------------------
+# Change point 5 (sum = sum + i):
+#   sum defined here feeds:
+#     5  itself (loop-carried: sum used in its own RHS next iteration)
+#     7  int result = sum         <- data dep
+#     8  if (result > threshold)  <- data dep (via result)
+#     9  result = threshold       <- control dep on 8 + data dep on threshold
+#    10  return result            <- data dep on result
+#   Note: i and n and threshold are NOT redefined here, so they are
+#   unaffected as definitions; but statements that use result (8,9,10)
+#   are transitively impacted.
+#   Ideal impacted: 5 (itself via loop-carry is excluded as it IS the seed),
+#                   7, 8, 9, 10
+#   We exclude 5 from the impacted list because it is the change point.
+#
+CHANGE_POINT: 5
+IDEAL: 7 8 9 10
+
+# -----------------------------------------------------------------------
+# Change point 13 (if (a > b)) in min():
+#   13 is the branch condition controlling 14, 15, 16.
+#   14 (int temp = a) is control-dep on 13; temp feeds 16 (b = temp).
+#   15 (a = b) is control-dep on 13; a feeds 17 (return a).
+#   16 (b = temp) is control-dep on 13.
+#   17 (return a) depends on 15 (data: a); 15 is impacted, so 17 is too.
+#   Ideal impacted: 14, 15, 16, 17
+#
+CHANGE_POINT: 13
+IDEAL: 14 15 16 17

@@ -152,7 +152,7 @@ public class PDGDataDependenceTest {
                 "  void m() {\n" +
                 "    int i = 1;\n" +
                 "    int j = 2;\n" +
-                "    int[] a = new int[5];\n" +
+                "    int a[];\n" +
                 "    int z = a[i + j];\n" +
                 "  }\n" +
                 "}\n";
