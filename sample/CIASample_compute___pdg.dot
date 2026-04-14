@@ -1,0 +1,38 @@
+digraph CIASample_compute__ {
+  rankdir=TB;
+  n0 [label="9: int result = sum ; "];
+  n1 [label="8: i ++ ; "];
+  n2 [label="10: if ( result > threshold ) "];
+  n3 [label="0: block"];
+  n4 [label="5: while ( i <= n ) "];
+  n5 [label="1: int sum = 0 ; "];
+  n6 [label="11: block"];
+  n7 [label="3: int n = 10 ; "];
+  n8 [label="6: block"];
+  n9 [label="2: int i = 1 ; "];
+  n10 [label="12: result = threshold ; "];
+  n11 [label="4: int threshold = 50 ; "];
+  n12 [label="13: return result ; "];
+  n13 [label="7: sum = sum + i ; "];
+  n2 -> n6 [label="CONTROL"];
+  n2 -> n10 [label="CONTROL"];
+  n4 -> n8 [label="CONTROL"];
+  n4 -> n13 [label="CONTROL"];
+  n4 -> n1 [label="CONTROL"];
+  n5 -> n0 [label="DATA(sum)"];
+  n13 -> n0 [label="DATA(sum)"];
+  n9 -> n1 [label="DATA(i)"];
+  n1 -> n1 [label="DATA(i)"];
+  n0 -> n2 [label="DATA(result)"];
+  n11 -> n2 [label="DATA(threshold)"];
+  n9 -> n4 [label="DATA(i)"];
+  n1 -> n4 [label="DATA(i)"];
+  n7 -> n4 [label="DATA(n)"];
+  n11 -> n10 [label="DATA(threshold)"];
+  n0 -> n12 [label="DATA(result)"];
+  n10 -> n12 [label="DATA(result)"];
+  n5 -> n13 [label="DATA(sum)"];
+  n13 -> n13 [label="DATA(sum)"];
+  n9 -> n13 [label="DATA(i)"];
+  n1 -> n13 [label="DATA(i)"];
+}

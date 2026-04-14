@@ -1,0 +1,23 @@
+digraph CIASample_min_int___int__ {
+  rankdir=TB;
+  n0 [label="15: int a = x ; "];
+  n1 [label="14: block"];
+  n2 [label="22: return a ; "];
+  n3 [label="17: if ( a > b ) "];
+  n4 [label="18: block"];
+  n5 [label="19: int temp = a ; "];
+  n6 [label="21: b = temp ; "];
+  n7 [label="16: int b = y ; "];
+  n8 [label="20: a = b ; "];
+  n3 -> n4 [label="CONTROL"];
+  n3 -> n5 [label="CONTROL"];
+  n3 -> n8 [label="CONTROL"];
+  n3 -> n6 [label="CONTROL"];
+  n0 -> n2 [label="DATA(a)"];
+  n8 -> n2 [label="DATA(a)"];
+  n0 -> n3 [label="DATA(a)"];
+  n7 -> n3 [label="DATA(b)"];
+  n0 -> n5 [label="DATA(a)"];
+  n5 -> n6 [label="DATA(temp)"];
+  n7 -> n8 [label="DATA(b)"];
+}
