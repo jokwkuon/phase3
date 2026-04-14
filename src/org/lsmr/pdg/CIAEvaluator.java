@@ -35,8 +35,8 @@ public class CIAEvaluator {
             System.exit(1);
         }
 
-        Path sourceFile    = Paths.get(args[0]);
-        Path groundTruth   = Paths.get(args[1]);
+        Path sourceFile  = Paths.get(args[0]);
+        Path groundTruth = Paths.get(args[1]);
 
         List<Scenario> scenarios = parseGroundTruth(groundTruth);
 
@@ -81,7 +81,8 @@ public class CIAEvaluator {
 
     // -----------------------------------------------------------------------
 
-    private static List<Scenario> parseGroundTruth(Path file) throws IOException {
+    // Package-private so CIAEvaluatorTest can call it directly
+    static List<Scenario> parseGroundTruth(Path file) throws IOException {
         List<String> lines = Files.readAllLines(file);
         List<Scenario> result = new ArrayList<>();
 
@@ -129,8 +130,8 @@ public class CIAEvaluator {
         final int changePoint;
         final List<Integer> idealImpacted;
         Scenario(int cp, List<Integer> ideal) {
-            this.changePoint    = cp;
-            this.idealImpacted  = Collections.unmodifiableList(new ArrayList<>(ideal));
+            this.changePoint   = cp;
+            this.idealImpacted = Collections.unmodifiableList(new ArrayList<>(ideal));
         }
     }
 }
