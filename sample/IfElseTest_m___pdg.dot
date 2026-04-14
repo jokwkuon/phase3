@@ -1,0 +1,18 @@
+digraph IfElseTest_m__ {
+  rankdir=TB;
+  n0 [label="2: int y = 0 ; "];
+  n1 [label="0: block"];
+  n2 [label="1: int x = 0 ; "];
+  n3 [label="5: y = 1 ; "];
+  n4 [label="6: else"];
+  n5 [label="4: block"];
+  n6 [label="8: y = 2 ; "];
+  n7 [label="7: block"];
+  n8 [label="3: if ( x == 0 ) "];
+  n8 -> n5 [label="CONTROL"];
+  n8 -> n3 [label="CONTROL"];
+  n8 -> n4 [label="CONTROL"];
+  n8 -> n7 [label="CONTROL"];
+  n8 -> n6 [label="CONTROL"];
+  n2 -> n8 [label="DATA(x)"];
+}

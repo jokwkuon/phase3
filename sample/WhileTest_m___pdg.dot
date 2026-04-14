@@ -1,0 +1,14 @@
+digraph WhileTest_m__ {
+  rankdir=TB;
+  n0 [label="0: block"];
+  n1 [label="1: int x = 0 ; "];
+  n2 [label="2: while ( x < 3 ) "];
+  n3 [label="3: block"];
+  n4 [label="4: x = x + 1 ; "];
+  n2 -> n3 [label="CONTROL"];
+  n2 -> n4 [label="CONTROL"];
+  n1 -> n2 [label="DATA(x)"];
+  n4 -> n2 [label="DATA(x)"];
+  n1 -> n4 [label="DATA(x)"];
+  n4 -> n4 [label="DATA(x)"];
+}

@@ -1,0 +1,8 @@
+class DoWhileTest {
+    void m() {
+        int x = 0;
+        do {
+            x = x + 1;
+        } while (x < 3);
+    }
+}
