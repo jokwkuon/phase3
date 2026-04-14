@@ -1,0 +1,594 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DataDependenceBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">org.lsmr.pdg</a> &gt; <span class="el_source">DataDependenceBuilder.java</span></div><h1>DataDependenceBuilder.java</h1><pre class="source lang-java linenums">package org.lsmr.pdg;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.lsmr.cfg.ControlFlowGraph;
+import org.lsmr.cfg.Edge;
+import org.lsmr.cfg.Node;
+
+<span class="fc" id="L15">public class DataDependenceBuilder {</span>
+
+    private static final String ENTRY  = &quot;*ENTRY*&quot;;
+    private static final String EXIT   = &quot;*EXIT*&quot;;
+    private static final String THROWN = &quot;*THROWN*&quot;;
+
+    public void addDataDependences(ControlFlowGraph cfg,
+                                   ProgramDependenceGraph pdg,
+                                   Map&lt;Node, PDGNode&gt; nodeMap) {
+
+<span class="fc" id="L25">        List&lt;Node&gt; allNodes = cfg.nodes();</span>
+
+<span class="fc" id="L27">        Map&lt;Node, Set&lt;String&gt;&gt; genVar    = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L28">        Map&lt;Node, Set&lt;Node&gt;&gt; killDefs    = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L29">        Map&lt;String, List&lt;Node&gt;&gt; allDefsOf = new HashMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        for (Node n : allNodes) {</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">            if (isBookkeeping(n)) continue;</span>
+<span class="fc" id="L33">            String var = getDefinedVariable(n.label());</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">            if (var != null) {</span>
+<span class="fc" id="L35">                allDefsOf.computeIfAbsent(var, k -&gt; new ArrayList&lt;&gt;()).add(n);</span>
+            }
+<span class="fc" id="L37">        }</span>
+
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        for (Node n : allNodes) {</span>
+<span class="fc" id="L40">            genVar.put(n, new HashSet&lt;&gt;());</span>
+<span class="fc" id="L41">            killDefs.put(n, new HashSet&lt;&gt;());</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">            if (isBookkeeping(n)) continue;</span>
+
+<span class="fc" id="L44">            String var = getDefinedVariable(n.label());</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">            if (var != null) {</span>
+<span class="fc" id="L46">                genVar.get(n).add(var);</span>
+<span class="fc" id="L47">                List&lt;Node&gt; others = allDefsOf.get(var);</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">                if (others != null) {</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">                    for (Node other : others) {</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">                        if (!other.equals(n)) {</span>
+<span class="fc" id="L51">                            killDefs.get(n).add(other);</span>
+                        }
+<span class="fc" id="L53">                    }</span>
+                }
+            }
+<span class="fc" id="L56">        }</span>
+
+<span class="fc" id="L58">        Map&lt;Node, Set&lt;Node&gt;&gt; inDefs = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L59">        Map&lt;Node, Set&lt;Node&gt;&gt; outDefs = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        for (Node n : allNodes) {</span>
+<span class="fc" id="L61">            inDefs.put(n, new HashSet&lt;&gt;());</span>
+<span class="fc" id="L62">            outDefs.put(n, new HashSet&lt;&gt;());</span>
+<span class="fc" id="L63">        }</span>
+
+<span class="fc" id="L65">        boolean changed = true;</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        while (changed) {</span>
+<span class="fc" id="L67">            changed = false;</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">            for (Node n : allNodes) {</span>
+<span class="fc" id="L69">                Set&lt;Node&gt; newIn = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">                for (Edge e : n.inEdges()) {</span>
+<span class="fc" id="L71">                    Set&lt;Node&gt; predOut = outDefs.get(e.source());</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">                    if (predOut != null) {</span>
+<span class="fc" id="L73">                        newIn.addAll(predOut);</span>
+                    }
+<span class="fc" id="L75">                }</span>
+
+<span class="fc" id="L77">                Set&lt;Node&gt; newOut = new HashSet&lt;&gt;(newIn);</span>
+<span class="fc" id="L78">                newOut.removeAll(killDefs.get(n));</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">                if (!genVar.get(n).isEmpty()) {</span>
+<span class="fc" id="L80">                    newOut.add(n);</span>
+                }
+
+<span class="fc" id="L83">                inDefs.put(n, newIn);</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">                if (!newOut.equals(outDefs.get(n))) {</span>
+<span class="fc" id="L85">                    outDefs.put(n, newOut);</span>
+<span class="fc" id="L86">                    changed = true;</span>
+                }
+<span class="fc" id="L88">            }</span>
+        }
+
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        for (Node useNode : allNodes) {</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">            if (isBookkeeping(useNode)) continue;</span>
+
+<span class="fc" id="L94">            PDGNode pdgUseNode = nodeMap.get(useNode);</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">            if (pdgUseNode == null) continue;</span>
+
+<span class="fc" id="L97">            Set&lt;String&gt; usedVars = getUsedVariables(useNode.label());</span>
+<span class="fc" id="L98">            Set&lt;Node&gt; reaching = inDefs.get(useNode);</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">            if (reaching == null) continue;</span>
+
+<span class="fc bfc" id="L101" title="All 2 branches covered.">            for (String var : usedVars) {</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">                for (Node defNode : reaching) {</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">                    if (isBookkeeping(defNode)) continue;</span>
+<span class="fc" id="L104">                    Set&lt;String&gt; defVars = genVar.get(defNode);</span>
+<span class="pc bpc" id="L105" title="1 of 4 branches missed.">                    if (defVars != null &amp;&amp; defVars.contains(var)) {</span>
+<span class="fc" id="L106">                        PDGNode pdgDefNode = nodeMap.get(defNode);</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">                        if (pdgDefNode != null) {</span>
+<span class="fc" id="L108">                            pdg.addEdge(new PDGEdge(pdgDefNode, pdgUseNode, PDGEdge.Type.DATA, var));</span>
+                        }
+                    }
+<span class="fc" id="L111">                }</span>
+<span class="fc" id="L112">            }</span>
+<span class="fc" id="L113">        }</span>
+<span class="fc" id="L114">    }</span>
+
+    private String getDefinedVariable(String label) {
+<span class="fc" id="L117">        String s = stripLinePrefix(label).trim();</span>
+<span class="fc" id="L118">        s = stripCommentsAndLiterals(s).trim();</span>
+
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (s.startsWith(&quot;for&quot;)) {</span>
+<span class="fc" id="L121">            String inside = contentsInsideOuterParens(s);</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">            if (inside != null) {</span>
+<span class="fc" id="L123">                int firstSemi = firstTopLevelChar(inside, ';');</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">                if (firstSemi &gt;= 0) {</span>
+<span class="fc" id="L125">                    return getDefinedVariable(inside.substring(0, firstSemi));</span>
+                }
+            }
+        }
+
+<span class="pc bpc" id="L130" title="1 of 6 branches missed.">        if (s.endsWith(&quot;++ ;&quot;) || s.endsWith(&quot;++;&quot;) || s.endsWith(&quot;++&quot;)) {</span>
+<span class="fc" id="L131">            String c = s.replaceAll(&quot;\\+\\+\\s*;?\\s*$&quot;, &quot;&quot;).trim();</span>
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">            if (isSimpleIdentifier(c)) return c;</span>
+        }
+<span class="pc bpc" id="L134" title="3 of 6 branches missed.">        if (s.endsWith(&quot;-- ;&quot;) || s.endsWith(&quot;--;&quot;) || s.endsWith(&quot;--&quot;)) {</span>
+<span class="nc" id="L135">            String c = s.replaceAll(&quot;--\\s*;?\\s*$&quot;, &quot;&quot;).trim();</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">            if (isSimpleIdentifier(c)) return c;</span>
+        }
+<span class="pc bpc" id="L138" title="1 of 4 branches missed.">        if (s.startsWith(&quot;++&quot;) || s.startsWith(&quot;--&quot;)) {</span>
+<span class="fc" id="L139">            String c = s.substring(2).replaceAll(&quot;;$&quot;, &quot;&quot;).trim();</span>
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">            if (isSimpleIdentifier(c)) return c;</span>
+        }
+
+<span class="fc" id="L143">        String stripped = stripTypePrefix(s);</span>
+<span class="fc" id="L144">        int eq = indexOfTopLevelAssignmentOp(stripped);</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        if (eq &gt; 0) {</span>
+<span class="fc" id="L146">            String left = stripped.substring(0, eq).trim();</span>
+<span class="fc" id="L147">            left = stripEnclosingParens(left);</span>
+
+<span class="fc" id="L149">            int bracket = left.indexOf('[');</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">            if (bracket &gt; 0) {</span>
+<span class="fc" id="L151">                left = left.substring(0, bracket).trim();</span>
+            }
+
+<span class="fc" id="L154">            int dot = left.lastIndexOf('.');</span>
+<span class="pc bpc" id="L155" title="1 of 4 branches missed.">            if (dot &gt;= 0 &amp;&amp; dot + 1 &lt; left.length()) {</span>
+<span class="fc" id="L156">                left = left.substring(dot + 1).trim();</span>
+            }
+
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">            if (isSimpleIdentifier(left)) return left;</span>
+        }
+<span class="fc" id="L161">        return null;</span>
+    }
+
+    private Set&lt;String&gt; getUsedVariables(String label) {
+<span class="fc" id="L165">        Set&lt;String&gt; used = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc" id="L166">        String s = stripLinePrefix(label).trim();</span>
+<span class="fc" id="L167">        s = stripCommentsAndLiterals(s).trim();</span>
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">        if (s.isEmpty()) return used;</span>
+
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        if (s.startsWith(&quot;for&quot;)) {</span>
+<span class="fc" id="L171">            collectForUses(s, used);</span>
+<span class="fc" id="L172">            return used;</span>
+        }
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        if (s.startsWith(&quot;if&quot;)) {</span>
+<span class="fc" id="L175">            collectDelimitedExpressionUses(s, used);</span>
+<span class="fc" id="L176">            return used;</span>
+        }
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        if (s.startsWith(&quot;while&quot;)) {</span>
+<span class="fc" id="L179">            collectDelimitedExpressionUses(s, used);</span>
+<span class="fc" id="L180">            return used;</span>
+        }
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        if (s.startsWith(&quot;switch&quot;)) {</span>
+<span class="fc" id="L183">            collectDelimitedExpressionUses(s, used);</span>
+<span class="fc" id="L184">            return used;</span>
+        }
+<span class="fc bfc" id="L186" title="All 2 branches covered.">        if (s.startsWith(&quot;return &quot;)) {</span>
+<span class="fc" id="L187">            collectIdentifiersFromExpression(s.substring(&quot;return&quot;.length()), used);</span>
+<span class="fc" id="L188">            return used;</span>
+        }
+<span class="fc bfc" id="L190" title="All 2 branches covered.">        if (s.startsWith(&quot;throw &quot;)) {</span>
+<span class="fc" id="L191">            collectIdentifiersFromExpression(s.substring(&quot;throw&quot;.length()), used);</span>
+<span class="fc" id="L192">            return used;</span>
+        }
+<span class="fc bfc" id="L194" title="All 2 branches covered.">        if (s.startsWith(&quot;case &quot;)) {</span>
+<span class="fc" id="L195">            collectIdentifiersFromExpression(s.substring(&quot;case&quot;.length()), used);</span>
+<span class="fc" id="L196">            return used;</span>
+        }
+<span class="fc bfc" id="L198" title="All 2 branches covered.">        if (s.startsWith(&quot;catch&quot;)) {</span>
+<span class="fc" id="L199">            String inside = contentsInsideOuterParens(s);</span>
+<span class="pc bpc" id="L200" title="1 of 2 branches missed.">            if (inside != null) {</span>
+<span class="fc" id="L201">                int lastSpace = inside.lastIndexOf(' ');</span>
+<span class="pc bpc" id="L202" title="1 of 2 branches missed.">                if (lastSpace &gt; 0) {</span>
+<span class="fc" id="L203">                    collectIdentifiersFromExpression(inside.substring(0, lastSpace), used);</span>
+                } else {
+<span class="nc" id="L205">                    collectIdentifiersFromExpression(inside, used);</span>
+                }
+            }
+<span class="fc" id="L208">            return used;</span>
+        }
+
+<span class="pc bpc" id="L211" title="1 of 4 branches missed.">        if (isPostIncDec(s) || isPreIncDec(s)) {</span>
+<span class="fc" id="L212">            String c = extractIncDecIdentifier(s);</span>
+<span class="pc bpc" id="L213" title="1 of 2 branches missed.">            if (isSimpleIdentifier(c)) used.add(c);</span>
+<span class="fc" id="L214">            return used;</span>
+        }
+
+<span class="fc" id="L217">        String stripped = stripTypePrefix(s);</span>
+<span class="fc" id="L218">        int eq = indexOfTopLevelAssignmentOp(stripped);</span>
+<span class="fc bfc" id="L219" title="All 2 branches covered.">        if (eq &gt; 0) {</span>
+<span class="fc" id="L220">            String lhs = stripped.substring(0, eq).trim();</span>
+<span class="fc" id="L221">            String rhs = stripped.substring(eq + 1).trim();</span>
+
+<span class="fc" id="L223">            collectIdentifiersFromExpression(rhs, used);</span>
+<span class="fc" id="L224">            collectArrayIndexUses(lhs, used);</span>
+
+<span class="pc bpc" id="L226" title="1 of 4 branches missed.">            if (eq &gt; 0 &amp;&amp; &quot;+-*/%&amp;|^&quot;.indexOf(stripped.charAt(eq - 1)) &gt;= 0) {</span>
+<span class="fc" id="L227">                String lhsVar = lhs;</span>
+<span class="fc" id="L228">                int bracket = lhsVar.indexOf('[');</span>
+<span class="pc bpc" id="L229" title="1 of 2 branches missed.">                if (bracket &gt; 0) lhsVar = lhsVar.substring(0, bracket).trim();</span>
+<span class="fc" id="L230">                int dot = lhsVar.lastIndexOf('.');</span>
+<span class="pc bpc" id="L231" title="3 of 4 branches missed.">                if (dot &gt;= 0 &amp;&amp; dot + 1 &lt; lhsVar.length()) lhsVar = lhsVar.substring(dot + 1).trim();</span>
+<span class="fc" id="L232">                lhsVar = stripEnclosingParens(lhsVar);</span>
+<span class="pc bpc" id="L233" title="1 of 2 branches missed.">                if (isSimpleIdentifier(lhsVar)) used.add(lhsVar);</span>
+            }
+<span class="fc" id="L235">            return used;</span>
+        }
+
+<span class="fc" id="L238">        collectIdentifiersFromExpression(s, used);</span>
+<span class="fc" id="L239">        return used;</span>
+    }
+
+    private void collectForUses(String statement, Set&lt;String&gt; used) {
+<span class="fc" id="L243">        String inside = contentsInsideOuterParens(statement);</span>
+<span class="pc bpc" id="L244" title="1 of 2 branches missed.">        if (inside == null) {</span>
+<span class="nc" id="L245">            collectIdentifiersFromExpression(statement, used);</span>
+<span class="nc" id="L246">            return;</span>
+        }
+
+<span class="fc" id="L249">        int firstSemi = firstTopLevelChar(inside, ';');</span>
+<span class="pc bpc" id="L250" title="1 of 2 branches missed.">        int secondSemi = firstSemi &lt; 0 ? -1 : firstTopLevelChar(inside, ';', firstSemi + 1);</span>
+
+<span class="pc bpc" id="L252" title="2 of 4 branches missed.">        if (firstSemi &lt; 0 || secondSemi &lt; 0) {</span>
+<span class="nc" id="L253">            collectIdentifiersFromExpression(inside, used);</span>
+<span class="nc" id="L254">            return;</span>
+        }
+
+<span class="fc" id="L257">        String init = inside.substring(0, firstSemi);</span>
+<span class="fc" id="L258">        String condition = inside.substring(firstSemi + 1, secondSemi);</span>
+<span class="fc" id="L259">        String update = inside.substring(secondSemi + 1);</span>
+
+<span class="fc" id="L261">        int initAssign = indexOfTopLevelAssignmentOp(stripTypePrefix(init));</span>
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">        if (initAssign &gt;= 0) {</span>
+<span class="fc" id="L263">            String initRhs = stripTypePrefix(init).substring(initAssign + 1);</span>
+<span class="fc" id="L264">            collectIdentifiersFromExpression(initRhs, used);</span>
+<span class="fc" id="L265">        } else {</span>
+<span class="nc" id="L266">            collectIdentifiersFromExpression(init, used);</span>
+        }
+
+<span class="fc" id="L269">        collectIdentifiersFromExpression(condition, used);</span>
+<span class="fc" id="L270">        collectIdentifiersFromExpression(update, used);</span>
+<span class="fc" id="L271">    }</span>
+
+    private void collectDelimitedExpressionUses(String statement, Set&lt;String&gt; used) {
+<span class="fc" id="L274">        String inside = contentsInsideOuterParens(statement);</span>
+<span class="pc bpc" id="L275" title="1 of 2 branches missed.">        if (inside != null) {</span>
+<span class="fc" id="L276">            collectIdentifiersFromExpression(inside, used);</span>
+        }
+<span class="fc" id="L278">    }</span>
+
+    private void collectArrayIndexUses(String lhs, Set&lt;String&gt; used) {
+<span class="fc" id="L281">        int open = lhs.indexOf('[');</span>
+<span class="fc bfc" id="L282" title="All 2 branches covered.">        while (open &gt;= 0) {</span>
+<span class="fc" id="L283">            int close = findMatchingBracket(lhs, open, '[', ']');</span>
+<span class="pc bpc" id="L284" title="1 of 2 branches missed.">            if (close &lt; 0) break;</span>
+<span class="fc" id="L285">            String idx = lhs.substring(open + 1, close);</span>
+<span class="fc" id="L286">            collectIdentifiersFromExpression(idx, used);</span>
+<span class="fc" id="L287">            open = lhs.indexOf('[', close + 1);</span>
+<span class="fc" id="L288">        }</span>
+<span class="fc" id="L289">    }</span>
+
+    private void collectIdentifiersFromExpression(String expr, Set&lt;String&gt; result) {
+<span class="pc bpc" id="L292" title="1 of 2 branches missed.">        if (expr == null) return;</span>
+<span class="fc" id="L293">        String text = stripCommentsAndLiterals(expr);</span>
+<span class="fc" id="L294">        int n = text.length();</span>
+
+<span class="fc bfc" id="L296" title="All 2 branches covered.">        for (int i = 0; i &lt; n; i++) {</span>
+<span class="fc" id="L297">            char ch = text.charAt(i);</span>
+<span class="fc bfc" id="L298" title="All 2 branches covered.">            if (!Character.isJavaIdentifierStart(ch)) continue;</span>
+
+<span class="fc" id="L300">            int start = i;</span>
+<span class="fc" id="L301">            i++;</span>
+<span class="fc bfc" id="L302" title="All 4 branches covered.">            while (i &lt; n &amp;&amp; Character.isJavaIdentifierPart(text.charAt(i))) {</span>
+<span class="fc" id="L303">                i++;</span>
+            }
+<span class="fc" id="L305">            String token = text.substring(start, i);</span>
+<span class="fc" id="L306">            int prev = previousNonWhitespace(text, start - 1);</span>
+<span class="fc" id="L307">            int next = nextNonWhitespace(text, i);</span>
+
+<span class="pc bpc" id="L309" title="1 of 4 branches missed.">            boolean precededByDot = prev &gt;= 0 &amp;&amp; text.charAt(prev) == '.';</span>
+<span class="fc bfc" id="L310" title="All 4 branches covered.">            boolean methodName = next &lt; n &amp;&amp; text.charAt(next) == '(';</span>
+<span class="pc bpc" id="L311" title="1 of 4 branches missed.">            boolean classLiteral = next + 5 &lt; n &amp;&amp; text.startsWith(&quot;.class&quot;, i);</span>
+
+<span class="pc bpc" id="L313" title="2 of 8 branches missed.">            if (!isKeyword(token)</span>
+                    &amp;&amp; !precededByDot
+                    &amp;&amp; !methodName
+                    &amp;&amp; !classLiteral) {
+<span class="fc" id="L317">                result.add(token);</span>
+            }
+
+<span class="fc" id="L320">            i--;</span>
+        }
+<span class="fc" id="L322">    }</span>
+
+    private String stripTypePrefix(String s) {
+<span class="fc" id="L325">        String trimmed = s.trim();</span>
+<span class="fc" id="L326">        String[] primitives = {&quot;byte &quot;, &quot;short &quot;, &quot;char &quot;, &quot;int &quot;, &quot;long &quot;,</span>
+                               &quot;float &quot;, &quot;double &quot;, &quot;boolean &quot;};
+<span class="fc bfc" id="L328" title="All 2 branches covered.">        for (String p : primitives) {</span>
+<span class="fc bfc" id="L329" title="All 2 branches covered.">            if (trimmed.startsWith(p)) return trimmed.substring(p.length()).trim();</span>
+        }
+
+<span class="fc" id="L332">        int genericBoundary = firstTypeNameBoundary(trimmed);</span>
+<span class="fc bfc" id="L333" title="All 2 branches covered.">        if (genericBoundary &gt; 0) {</span>
+<span class="fc" id="L334">            String first = trimmed.substring(0, genericBoundary).trim();</span>
+<span class="fc" id="L335">            String rest = trimmed.substring(genericBoundary).trim();</span>
+<span class="pc bpc" id="L336" title="1 of 4 branches missed.">            if (looksLikeReferenceType(first) &amp;&amp; indexOfTopLevelAssignmentOp(rest) &gt;= 0) {</span>
+<span class="fc" id="L337">                return rest;</span>
+            }
+        }
+<span class="fc" id="L340">        return trimmed;</span>
+    }
+
+    private int indexOfTopLevelAssignmentOp(String s) {
+<span class="fc" id="L344">        int parenDepth = 0;</span>
+<span class="fc" id="L345">        int bracketDepth = 0;</span>
+<span class="fc" id="L346">        int braceDepth = 0;</span>
+<span class="fc bfc" id="L347" title="All 2 branches covered.">        for (int i = 0; i &lt; s.length(); i++) {</span>
+<span class="fc" id="L348">            char c = s.charAt(i);</span>
+<span class="pc bpc" id="L349" title="2 of 7 branches missed.">            switch (c) {</span>
+                case '(':
+<span class="fc" id="L351">                    parenDepth++;</span>
+<span class="fc" id="L352">                    continue;</span>
+                case ')':
+<span class="fc" id="L354">                    parenDepth--;</span>
+<span class="fc" id="L355">                    continue;</span>
+                case '[':
+<span class="fc" id="L357">                    bracketDepth++;</span>
+<span class="fc" id="L358">                    continue;</span>
+                case ']':
+<span class="fc" id="L360">                    bracketDepth--;</span>
+<span class="fc" id="L361">                    continue;</span>
+                case '{':
+<span class="nc" id="L363">                    braceDepth++;</span>
+<span class="nc" id="L364">                    continue;</span>
+                case '}':
+<span class="nc" id="L366">                    braceDepth--;</span>
+<span class="nc" id="L367">                    continue;</span>
+                default:
+                    break;
+            }
+
+<span class="pc bpc" id="L372" title="1 of 6 branches missed.">            if (parenDepth != 0 || bracketDepth != 0 || braceDepth != 0) {</span>
+<span class="nc" id="L373">                continue;</span>
+            }
+
+<span class="fc bfc" id="L376" title="All 2 branches covered.">            if (c == '=') {</span>
+<span class="pc bpc" id="L377" title="1 of 4 branches missed.">                if (i + 1 &lt; s.length() &amp;&amp; s.charAt(i + 1) == '=') { i++; continue; }</span>
+<span class="pc bpc" id="L378" title="2 of 4 branches missed.">                if (i &gt; 0 &amp;&amp; &quot;!&lt;&gt;&quot;.indexOf(s.charAt(i - 1)) &gt;= 0) continue;</span>
+<span class="fc" id="L379">                return i;</span>
+            }
+<span class="pc bpc" id="L381" title="1 of 6 branches missed.">            if (&quot;+-*/%&amp;|^&quot;.indexOf(c) &gt;= 0 &amp;&amp; i + 1 &lt; s.length() &amp;&amp; s.charAt(i + 1) == '=') {</span>
+<span class="fc" id="L382">                return i + 1;</span>
+            }
+        }
+<span class="fc" id="L385">        return -1;</span>
+    }
+
+    private String stripCommentsAndLiterals(String text) {
+<span class="fc" id="L389">        StringBuilder sb = new StringBuilder(text.length());</span>
+<span class="fc" id="L390">        boolean inString = false;</span>
+<span class="fc" id="L391">        boolean inChar = false;</span>
+<span class="fc" id="L392">        boolean escaping = false;</span>
+
+<span class="fc bfc" id="L394" title="All 2 branches covered.">        for (int i = 0; i &lt; text.length(); i++) {</span>
+<span class="fc" id="L395">            char c = text.charAt(i);</span>
+
+<span class="fc bfc" id="L397" title="All 2 branches covered.">            if (inString) {</span>
+<span class="pc bpc" id="L398" title="1 of 2 branches missed.">                if (escaping) {</span>
+<span class="nc" id="L399">                    escaping = false;</span>
+<span class="pc bpc" id="L400" title="1 of 2 branches missed.">                } else if (c == '\\') {</span>
+<span class="nc" id="L401">                    escaping = true;</span>
+<span class="fc bfc" id="L402" title="All 2 branches covered.">                } else if (c == '&quot;') {</span>
+<span class="fc" id="L403">                    inString = false;</span>
+                }
+<span class="fc" id="L405">                sb.append(' ');</span>
+<span class="fc" id="L406">                continue;</span>
+            }
+
+<span class="pc bpc" id="L409" title="1 of 2 branches missed.">            if (inChar) {</span>
+<span class="nc bnc" id="L410" title="All 2 branches missed.">                if (escaping) {</span>
+<span class="nc" id="L411">                    escaping = false;</span>
+<span class="nc bnc" id="L412" title="All 2 branches missed.">                } else if (c == '\\') {</span>
+<span class="nc" id="L413">                    escaping = true;</span>
+<span class="nc bnc" id="L414" title="All 2 branches missed.">                } else if (c == '\'') {</span>
+<span class="nc" id="L415">                    inChar = false;</span>
+                }
+<span class="nc" id="L417">                sb.append(' ');</span>
+<span class="nc" id="L418">                continue;</span>
+            }
+
+<span class="fc bfc" id="L421" title="All 2 branches covered.">            if (c == '&quot;') {</span>
+<span class="fc" id="L422">                inString = true;</span>
+<span class="fc" id="L423">                sb.append(' ');</span>
+<span class="fc" id="L424">                continue;</span>
+            }
+<span class="pc bpc" id="L426" title="1 of 2 branches missed.">            if (c == '\'') {</span>
+<span class="nc" id="L427">                inChar = true;</span>
+<span class="nc" id="L428">                sb.append(' ');</span>
+<span class="nc" id="L429">                continue;</span>
+            }
+<span class="pc bpc" id="L431" title="2 of 6 branches missed.">            if (c == '/' &amp;&amp; i + 1 &lt; text.length() &amp;&amp; text.charAt(i + 1) == '/') {</span>
+<span class="fc" id="L432">                break;</span>
+            }
+
+<span class="fc" id="L435">            sb.append(c);</span>
+        }
+<span class="fc" id="L437">        return sb.toString();</span>
+    }
+
+    private String contentsInsideOuterParens(String text) {
+<span class="fc" id="L441">        int open = text.indexOf('(');</span>
+<span class="pc bpc" id="L442" title="1 of 2 branches missed.">        if (open &lt; 0) return null;</span>
+<span class="fc" id="L443">        int close = findMatchingBracket(text, open, '(', ')');</span>
+<span class="pc bpc" id="L444" title="1 of 2 branches missed.">        if (close &lt; 0) return null;</span>
+<span class="fc" id="L445">        return text.substring(open + 1, close);</span>
+    }
+
+    private int findMatchingBracket(String text, int openIndex, char open, char close) {
+<span class="fc" id="L449">        int depth = 0;</span>
+<span class="pc bpc" id="L450" title="1 of 2 branches missed.">        for (int i = openIndex; i &lt; text.length(); i++) {</span>
+<span class="fc" id="L451">            char c = text.charAt(i);</span>
+<span class="fc bfc" id="L452" title="All 2 branches covered.">            if (c == open) depth++;</span>
+<span class="fc bfc" id="L453" title="All 2 branches covered.">            else if (c == close) {</span>
+<span class="fc" id="L454">                depth--;</span>
+<span class="fc bfc" id="L455" title="All 2 branches covered.">                if (depth == 0) return i;</span>
+            }
+        }
+<span class="nc" id="L458">        return -1;</span>
+    }
+
+    private int firstTopLevelChar(String text, char target) {
+<span class="fc" id="L462">        return firstTopLevelChar(text, target, 0);</span>
+    }
+
+    private int firstTopLevelChar(String text, char target, int start) {
+<span class="fc" id="L466">        int parenDepth = 0;</span>
+<span class="fc" id="L467">        int bracketDepth = 0;</span>
+<span class="fc" id="L468">        int braceDepth = 0;</span>
+<span class="pc bpc" id="L469" title="1 of 2 branches missed.">        for (int i = start; i &lt; text.length(); i++) {</span>
+<span class="fc" id="L470">            char c = text.charAt(i);</span>
+<span class="pc bpc" id="L471" title="6 of 7 branches missed.">            switch (c) {</span>
+                case '(':
+<span class="nc" id="L473">                    parenDepth++;</span>
+<span class="nc" id="L474">                    break;</span>
+                case ')':
+<span class="nc" id="L476">                    parenDepth--;</span>
+<span class="nc" id="L477">                    break;</span>
+                case '[':
+<span class="nc" id="L479">                    bracketDepth++;</span>
+<span class="nc" id="L480">                    break;</span>
+                case ']':
+<span class="nc" id="L482">                    bracketDepth--;</span>
+<span class="nc" id="L483">                    break;</span>
+                case '{':
+<span class="nc" id="L485">                    braceDepth++;</span>
+<span class="nc" id="L486">                    break;</span>
+                case '}':
+<span class="nc" id="L488">                    braceDepth--;</span>
+<span class="nc" id="L489">                    break;</span>
+                default:
+                    break;
+            }
+<span class="pc bpc" id="L493" title="3 of 8 branches missed.">            if (c == target &amp;&amp; parenDepth == 0 &amp;&amp; bracketDepth == 0 &amp;&amp; braceDepth == 0) {</span>
+<span class="fc" id="L494">                return i;</span>
+            }
+        }
+<span class="nc" id="L497">        return -1;</span>
+    }
+
+    private int previousNonWhitespace(String text, int index) {
+<span class="fc bfc" id="L501" title="All 4 branches covered.">        while (index &gt;= 0 &amp;&amp; Character.isWhitespace(text.charAt(index))) {</span>
+<span class="fc" id="L502">            index--;</span>
+        }
+<span class="fc" id="L504">        return index;</span>
+    }
+
+    private int nextNonWhitespace(String text, int index) {
+<span class="fc bfc" id="L508" title="All 4 branches covered.">        while (index &lt; text.length() &amp;&amp; Character.isWhitespace(text.charAt(index))) {</span>
+<span class="fc" id="L509">            index++;</span>
+        }
+<span class="fc" id="L511">        return index;</span>
+    }
+
+    private int firstTypeNameBoundary(String text) {
+<span class="fc" id="L515">        int depth = 0;</span>
+<span class="fc bfc" id="L516" title="All 2 branches covered.">        for (int i = 0; i &lt; text.length(); i++) {</span>
+<span class="fc" id="L517">            char c = text.charAt(i);</span>
+<span class="pc bpc" id="L518" title="1 of 2 branches missed.">            if (c == '&lt;') depth++;</span>
+<span class="pc bpc" id="L519" title="1 of 2 branches missed.">            else if (c == '&gt;') depth--;</span>
+<span class="pc bpc" id="L520" title="1 of 4 branches missed.">            else if (depth == 0 &amp;&amp; Character.isWhitespace(c)) return i;</span>
+        }
+<span class="fc" id="L522">        return -1;</span>
+    }
+
+    private boolean looksLikeReferenceType(String token) {
+<span class="pc bpc" id="L526" title="1 of 2 branches missed.">        if (token.isEmpty()) return false;</span>
+<span class="fc" id="L527">        String cleaned = token.replace(&quot;[]&quot;, &quot;&quot;);</span>
+<span class="fc" id="L528">        int lastDot = cleaned.lastIndexOf('.');</span>
+<span class="pc bpc" id="L529" title="1 of 4 branches missed.">        if (lastDot &gt;= 0 &amp;&amp; lastDot + 1 &lt; cleaned.length()) {</span>
+<span class="fc" id="L530">            cleaned = cleaned.substring(lastDot + 1);</span>
+        }
+<span class="pc bpc" id="L532" title="1 of 4 branches missed.">        return !cleaned.isEmpty() &amp;&amp; Character.isUpperCase(cleaned.charAt(0));</span>
+    }
+
+    private boolean isPostIncDec(String s) {
+<span class="fc" id="L536">        return s.matches(&quot;.*[A-Za-z_][A-Za-z0-9_]*\\s*(\\+\\+|--)\\s*;?&quot;);</span>
+    }
+
+    private boolean isPreIncDec(String s) {
+<span class="pc bpc" id="L540" title="1 of 4 branches missed.">        return s.startsWith(&quot;++&quot;) || s.startsWith(&quot;--&quot;);</span>
+    }
+
+    private String extractIncDecIdentifier(String s) {
+<span class="fc" id="L544">        String cleaned = s.replaceAll(&quot;^\\s*(\\+\\+|--)\\s*&quot;, &quot;&quot;)</span>
+<span class="fc" id="L545">                          .replaceAll(&quot;\\s*(\\+\\+|--)\\s*;?\\s*$&quot;, &quot;&quot;)</span>
+<span class="fc" id="L546">                          .trim();</span>
+<span class="fc" id="L547">        return cleaned;</span>
+    }
+
+    private String stripEnclosingParens(String text) {
+<span class="fc" id="L551">        String result = text.trim();</span>
+<span class="pc bpc" id="L552" title="1 of 4 branches missed.">        while (result.startsWith(&quot;(&quot;) &amp;&amp; result.endsWith(&quot;)&quot;)) {</span>
+<span class="fc" id="L553">            int close = findMatchingBracket(result, 0, '(', ')');</span>
+<span class="pc bpc" id="L554" title="1 of 2 branches missed.">            if (close != result.length() - 1) break;</span>
+<span class="fc" id="L555">            result = result.substring(1, result.length() - 1).trim();</span>
+<span class="fc" id="L556">        }</span>
+<span class="fc" id="L557">        return result;</span>
+    }
+
+    private String stripLinePrefix(String label) {
+<span class="fc" id="L561">        int colon = label.indexOf(':');</span>
+<span class="pc bpc" id="L562" title="1 of 4 branches missed.">        if (colon &gt;= 0 &amp;&amp; colon + 1 &lt; label.length())</span>
+<span class="fc" id="L563">            return label.substring(colon + 1).trim();</span>
+<span class="fc" id="L564">        return label.trim();</span>
+    }
+
+    private boolean isSimpleIdentifier(String text) {
+<span class="pc bpc" id="L568" title="1 of 4 branches missed.">        return text != null &amp;&amp; text.matches(&quot;[A-Za-z_][A-Za-z0-9_]*&quot;);</span>
+    }
+
+    private boolean isBookkeeping(Node n) {
+<span class="fc" id="L572">        String label = n.label();</span>
+<span class="fc bfc" id="L573" title="All 6 branches covered.">        return label.equals(ENTRY) || label.equals(EXIT) || label.equals(THROWN);</span>
+    }
+
+    private boolean isKeyword(String token) {
+<span class="fc bfc" id="L577" title="All 2 branches covered.">        switch (token) {</span>
+            case &quot;if&quot;: case &quot;else&quot;: case &quot;while&quot;: case &quot;for&quot;: case &quot;do&quot;:
+            case &quot;return&quot;: case &quot;break&quot;: case &quot;continue&quot;: case &quot;throw&quot;:
+            case &quot;try&quot;: case &quot;catch&quot;: case &quot;finally&quot;: case &quot;switch&quot;: case &quot;case&quot;:
+            case &quot;new&quot;: case &quot;this&quot;: case &quot;super&quot;: case &quot;instanceof&quot;:
+            case &quot;true&quot;: case &quot;false&quot;: case &quot;null&quot;:
+            case &quot;int&quot;: case &quot;long&quot;: case &quot;double&quot;: case &quot;float&quot;: case &quot;boolean&quot;:
+            case &quot;byte&quot;: case &quot;short&quot;: case &quot;char&quot;: case &quot;void&quot;:
+            case &quot;class&quot;: case &quot;interface&quot;: case &quot;extends&quot;: case &quot;implements&quot;:
+            case &quot;static&quot;: case &quot;final&quot;: case &quot;public&quot;: case &quot;private&quot;:
+            case &quot;protected&quot;: case &quot;abstract&quot;: case &quot;synchronized&quot;:
+<span class="fc" id="L588">                return true;</span>
+            default:
+<span class="fc" id="L590">                return false;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

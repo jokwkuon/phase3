@@ -25,7 +25,6 @@ public class ProgramDependenceGraphTest {
             "}\n", ".m(");
 
         // Also create standalone nodes for unit-level tests
-        ProgramDependenceGraph blank = new ProgramDependenceGraph();
         // We need real CFG nodes — build a tiny one
         ProgramDependenceGraph tiny = PDGTestUtils.buildPDGFromSource("Tiny",
             "class Tiny {\n" +

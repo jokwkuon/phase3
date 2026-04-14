@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CIAEvaluator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">org.lsmr.pdg</a> &gt; <span class="el_source">CIAEvaluator.java</span></div><h1>CIAEvaluator.java</h1><pre class="source lang-java linenums">package org.lsmr.pdg;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+
+/**
+ * Evaluator for the CIA Tool.
+ *
+ * &lt;p&gt;Reads a ground-truth file (plain text, one scenario per block) and
+ * compares the tool's actual output against the ideal (manually-derived)
+ * output.  Computes precision, recall, and F1 for each change point and
+ * a macro-average across all change points.
+ *
+ * &lt;p&gt;&lt;b&gt;Ground-truth file format&lt;/b&gt; (one or more blocks separated by blank
+ * lines):
+ * &lt;pre&gt;
+ * CHANGE_POINT: 3
+ * IDEAL: 5 7 9 12
+ * &lt;/pre&gt;
+ * Lines beginning with '#' are treated as comments and ignored.
+ *
+ * &lt;p&gt;Usage:
+ * &lt;pre&gt;
+ *   java org.lsmr.pdg.CIAEvaluator &amp;lt;source-file&amp;gt; &amp;lt;ground-truth-file&amp;gt;
+ * &lt;/pre&gt;
+ */
+<span class="nc" id="L30">public class CIAEvaluator {</span>
+
+    public static void main(String[] args) throws Exception {
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">        if (args.length != 2) {</span>
+<span class="nc" id="L34">            System.err.println(&quot;Usage: java org.lsmr.pdg.CIAEvaluator &lt;source-file&gt; &lt;ground-truth-file&gt;&quot;);</span>
+<span class="nc" id="L35">            System.exit(1);</span>
+        }
+
+<span class="fc" id="L38">        Path sourceFile  = Paths.get(args[0]);</span>
+<span class="fc" id="L39">        Path groundTruth = Paths.get(args[1]);</span>
+
+<span class="fc" id="L41">        List&lt;Scenario&gt; scenarios = parseGroundTruth(groundTruth);</span>
+
+<span class="fc" id="L43">        System.out.printf(&quot;%-14s %-12s %-12s %-12s %-12s %-12s %-8s%n&quot;,</span>
+                &quot;ChangePoint&quot;, &quot;TP&quot;, &quot;FP&quot;, &quot;FN&quot;, &quot;Precision&quot;, &quot;Recall&quot;, &quot;F1&quot;);
+<span class="fc" id="L45">        System.out.println(&quot;-&quot;.repeat(82));</span>
+
+<span class="fc" id="L47">        double sumP = 0, sumR = 0, sumF = 0;</span>
+
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        for (Scenario s : scenarios) {</span>
+<span class="fc" id="L50">            List&lt;Integer&gt; actual = CIATool.analyse(sourceFile, s.changePoint);</span>
+<span class="fc" id="L51">            Set&lt;Integer&gt; actualSet = new HashSet&lt;&gt;(actual);</span>
+<span class="fc" id="L52">            Set&lt;Integer&gt; idealSet  = new HashSet&lt;&gt;(s.idealImpacted);</span>
+
+<span class="fc" id="L54">            int tp = 0, fp = 0, fn = 0;</span>
+<span class="fc bfc" id="L55" title="All 4 branches covered.">            for (int a : actualSet) if (idealSet.contains(a)) tp++; else fp++;</span>
+<span class="pc bpc" id="L56" title="1 of 4 branches missed.">            for (int i : idealSet)  if (!actualSet.contains(i)) fn++;</span>
+
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">            double precision = (tp + fp == 0) ? 1.0 : (double) tp / (tp + fp);</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">            double recall    = (tp + fn == 0) ? 1.0 : (double) tp / (tp + fn);</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">            double f1        = (precision + recall == 0) ? 0.0</span>
+<span class="fc" id="L61">                                : 2 * precision * recall / (precision + recall);</span>
+
+<span class="fc" id="L63">            sumP += precision; sumR += recall; sumF += f1;</span>
+
+<span class="fc" id="L65">            System.out.printf(&quot;%-14d %-12d %-12d %-12d %-12.3f %-12.3f %-8.3f%n&quot;,</span>
+<span class="fc" id="L66">                    s.changePoint, tp, fp, fn, precision, recall, f1);</span>
+
+            // Detail: false positives and false negatives
+<span class="fc" id="L69">            Set&lt;Integer&gt; fpSet = new HashSet&lt;&gt;(actualSet); fpSet.removeAll(idealSet);</span>
+<span class="fc" id="L70">            Set&lt;Integer&gt; fnSet = new HashSet&lt;&gt;(idealSet);  fnSet.removeAll(actualSet);</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">            if (!fpSet.isEmpty()) System.out.println(&quot;    FP (spurious): &quot; + sorted(fpSet));</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">            if (!fnSet.isEmpty()) System.out.println(&quot;    FN (missed):   &quot; + sorted(fnSet));</span>
+<span class="fc" id="L73">        }</span>
+
+<span class="fc" id="L75">        System.out.println(&quot;-&quot;.repeat(82));</span>
+<span class="fc" id="L76">        int n = scenarios.size();</span>
+<span class="fc" id="L77">        System.out.printf(&quot;%-14s %-36s %-12.3f %-12.3f %-8.3f%n&quot;,</span>
+                &quot;MACRO-AVG&quot;, &quot;&quot;,
+<span class="fc" id="L79">                sumP / n, sumR / n, sumF / n);</span>
+<span class="fc" id="L80">    }</span>
+
+    // -----------------------------------------------------------------------
+
+    // Package-private so CIAEvaluatorTest can call it directly
+    static List&lt;Scenario&gt; parseGroundTruth(Path file) throws IOException {
+<span class="fc" id="L86">        List&lt;String&gt; lines = Files.readAllLines(file);</span>
+<span class="fc" id="L87">        List&lt;Scenario&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L89">        Integer changePoint = null;</span>
+<span class="fc" id="L90">        List&lt;Integer&gt; ideal = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        for (String raw : lines) {</span>
+<span class="fc" id="L93">            String line = raw.trim();</span>
+<span class="fc bfc" id="L94" title="All 4 branches covered.">            if (line.startsWith(&quot;#&quot;) || line.isEmpty()) {</span>
+<span class="pc bpc" id="L95" title="1 of 4 branches missed.">                if (changePoint != null &amp;&amp; !ideal.isEmpty()) {</span>
+<span class="fc" id="L96">                    result.add(new Scenario(changePoint, ideal));</span>
+<span class="fc" id="L97">                    changePoint = null;</span>
+<span class="fc" id="L98">                    ideal = new ArrayList&lt;&gt;();</span>
+                }
+                continue;
+            }
+<span class="fc bfc" id="L102" title="All 2 branches covered.">            if (line.startsWith(&quot;CHANGE_POINT:&quot;)) {</span>
+<span class="pc bpc" id="L103" title="3 of 4 branches missed.">                if (changePoint != null &amp;&amp; !ideal.isEmpty()) {</span>
+<span class="nc" id="L104">                    result.add(new Scenario(changePoint, ideal));</span>
+<span class="nc" id="L105">                    ideal = new ArrayList&lt;&gt;();</span>
+                }
+<span class="fc" id="L107">                changePoint = Integer.parseInt(line.substring(&quot;CHANGE_POINT:&quot;.length()).trim());</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">            } else if (line.startsWith(&quot;IDEAL:&quot;)) {</span>
+<span class="fc" id="L109">                String rest = line.substring(&quot;IDEAL:&quot;.length()).trim();</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">                for (String tok : rest.split(&quot;\\s+&quot;)) {</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">                    if (!tok.isEmpty()) ideal.add(Integer.parseInt(tok));</span>
+                }
+            }
+<span class="fc" id="L114">        }</span>
+<span class="pc bpc" id="L115" title="1 of 4 branches missed.">        if (changePoint != null &amp;&amp; !ideal.isEmpty()) {</span>
+<span class="fc" id="L116">            result.add(new Scenario(changePoint, ideal));</span>
+        }
+
+<span class="fc bfc" id="L119" title="All 2 branches covered.">        if (result.isEmpty()) throw new IllegalArgumentException(&quot;No scenarios found in &quot; + file);</span>
+<span class="fc" id="L120">        return result;</span>
+    }
+
+    private static List&lt;Integer&gt; sorted(Set&lt;Integer&gt; s) {
+<span class="fc" id="L124">        List&lt;Integer&gt; l = new ArrayList&lt;&gt;(s);</span>
+<span class="fc" id="L125">        Collections.sort(l);</span>
+<span class="fc" id="L126">        return l;</span>
+    }
+
+    static class Scenario {
+        final int changePoint;
+        final List&lt;Integer&gt; idealImpacted;
+<span class="fc" id="L132">        Scenario(int cp, List&lt;Integer&gt; ideal) {</span>
+<span class="fc" id="L133">            this.changePoint   = cp;</span>
+<span class="fc" id="L134">            this.idealImpacted = Collections.unmodifiableList(new ArrayList&lt;&gt;(ideal));</span>
+<span class="fc" id="L135">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

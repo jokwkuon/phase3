@@ -12,7 +12,7 @@ import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
  * @param <T> The return type of the visit operation. Use {@link Void} for
  * operations with no return type.
  */
-@SuppressWarnings("CheckReturnValue")
+
 public class Java1_2ANTLRParserBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements Java1_2ANTLRParserVisitor<T> {
 	/**
 	 * {@inheritDoc}

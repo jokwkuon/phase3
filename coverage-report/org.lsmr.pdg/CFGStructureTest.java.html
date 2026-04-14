@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CFGStructureTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">org.lsmr.pdg</a> &gt; <span class="el_source">CFGStructureTest.java</span></div><h1>CFGStructureTest.java</h1><pre class="source lang-java linenums">package org.lsmr.pdg;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
+import org.lsmr.cfg.ControlFlowGraph;
+import org.lsmr.cfg.Edge;
+import org.lsmr.cfg.Edge.EdgeLabel;
+import org.lsmr.cfg.Node;
+
+
+<span class="fc" id="L13">public class CFGStructureTest {</span>
+
+    @Test
+    void ifTestHasNodes() throws Exception {
+<span class="fc" id="L17">        ControlFlowGraph cfg = PDGTestUtils.firstCFG(&quot;sample/IfTest.java&quot;);</span>
+<span class="fc" id="L18">        assertFalse(cfg.nodes().isEmpty());</span>
+<span class="fc" id="L19">    }</span>
+
+    @Test
+    void ifTestHasTrueAndFalseEdges() throws Exception {
+<span class="fc" id="L23">        ControlFlowGraph cfg = PDGTestUtils.firstCFG(&quot;sample/IfTest.java&quot;);</span>
+<span class="fc" id="L24">        boolean foundTrue  = false;</span>
+<span class="fc" id="L25">        boolean foundFalse = false;</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        for (Edge edge : cfg.edges()) {</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">            if (edge.label() == EdgeLabel.TRUE)  foundTrue  = true;</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">            if (edge.label() == EdgeLabel.FALSE) foundFalse = true;</span>
+<span class="fc" id="L29">        }</span>
+<span class="fc" id="L30">        assertTrue(foundTrue,  &quot;Expected a TRUE edge in the if-test CFG&quot;);</span>
+<span class="fc" id="L31">        assertTrue(foundFalse, &quot;Expected a FALSE edge in the if-test CFG&quot;);</span>
+<span class="fc" id="L32">    }</span>
+
+    @Test
+    void ifElseTestHasTrueAndFalseEdges() throws Exception {
+<span class="fc" id="L36">        ControlFlowGraph cfg = PDGTestUtils.firstCFG(&quot;sample/IfElseTest.java&quot;);</span>
+<span class="fc" id="L37">        boolean foundTrue  = false;</span>
+<span class="fc" id="L38">        boolean foundFalse = false;</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        for (Edge edge : cfg.edges()) {</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">            if (edge.label() == EdgeLabel.TRUE)  foundTrue  = true;</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            if (edge.label() == EdgeLabel.FALSE) foundFalse = true;</span>
+<span class="fc" id="L42">        }</span>
+<span class="fc" id="L43">        assertTrue(foundTrue,  &quot;Expected a TRUE edge in the if-else CFG&quot;);</span>
+<span class="fc" id="L44">        assertTrue(foundFalse, &quot;Expected a FALSE edge in the if-else CFG&quot;);</span>
+<span class="fc" id="L45">    }</span>
+
+    @Test
+    void whileTestHasTrueAndFalseEdges() throws Exception {
+<span class="fc" id="L49">        ControlFlowGraph cfg = PDGTestUtils.firstCFG(&quot;sample/WhileTest.java&quot;);</span>
+<span class="fc" id="L50">        boolean foundTrue  = false;</span>
+<span class="fc" id="L51">        boolean foundFalse = false;</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        for (Edge edge : cfg.edges()) {</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">            if (edge.label() == EdgeLabel.TRUE)  foundTrue  = true;</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">            if (edge.label() == EdgeLabel.FALSE) foundFalse = true;</span>
+<span class="fc" id="L55">        }</span>
+<span class="fc" id="L56">        assertTrue(foundTrue,  &quot;Expected a TRUE (loop-back) edge in the while CFG&quot;);</span>
+<span class="fc" id="L57">        assertTrue(foundFalse, &quot;Expected a FALSE (exit) edge in the while CFG&quot;);</span>
+<span class="fc" id="L58">    }</span>
+
+    @Test
+    void defUseTestHasNoConditionEdges() throws Exception {
+<span class="fc" id="L62">        ControlFlowGraph cfg = PDGTestUtils.firstCFG(&quot;sample/DefUseTest.java&quot;);</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        for (Edge edge : cfg.edges()) {</span>
+<span class="pc bpc" id="L64" title="2 of 4 branches missed.">            assertTrue(edge.label() != EdgeLabel.TRUE &amp;&amp; edge.label() != EdgeLabel.FALSE,</span>
+                       &quot;Straight-line code should have no branch edges&quot;);
+<span class="fc" id="L66">        }</span>
+<span class="fc" id="L67">    }</span>
+
+    @Test
+    void allEdgesHaveNonNullSource() throws Exception {
+<span class="fc" id="L71">        ControlFlowGraph cfg = PDGTestUtils.firstCFG(&quot;sample/IfTest.java&quot;);</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        for (Edge edge : cfg.edges()) {</span>
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">            assertTrue(edge.source() != null, &quot;Every edge must have a non-null source&quot;);</span>
+<span class="fc" id="L74">        }</span>
+<span class="fc" id="L75">    }</span>
+
+    @Test
+    void allNodesHaveLabelInIfTest() throws Exception {
+<span class="fc" id="L79">        ControlFlowGraph cfg = PDGTestUtils.firstCFG(&quot;sample/IfTest.java&quot;);</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        for (Node node : cfg.nodes()) {</span>
+<span class="pc bpc" id="L81" title="2 of 4 branches missed.">            assertFalse(node.label() == null || node.label().isEmpty(),</span>
+                        &quot;Every node must have a non-empty label&quot;);
+<span class="fc" id="L83">        }</span>
+<span class="fc" id="L84">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

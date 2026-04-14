@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PDGEdgeCaseTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">org.lsmr.pdg</a> &gt; <span class="el_source">PDGEdgeCaseTest.java</span></div><h1>PDGEdgeCaseTest.java</h1><pre class="source lang-java linenums">package org.lsmr.pdg;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
+
+<span class="fc" id="L8">public class PDGEdgeCaseTest {</span>
+
+
+    @Test
+    void forLoopProducesAtLeastOneControlEdge() throws Exception {
+<span class="fc" id="L13">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/ForTest.java&quot;);</span>
+<span class="fc" id="L14">        long count = pdg.getEdges().stream()</span>
+<span class="fc bfc" id="L15" title="All 2 branches covered.">                .filter(e -&gt; e.getType() == PDGEdge.Type.CONTROL)</span>
+<span class="fc" id="L16">                .count();</span>
+<span class="pc bpc" id="L17" title="1 of 2 branches missed.">        assertTrue(count &gt;= 1, &quot;for loop should produce at least one control edge&quot;);</span>
+<span class="fc" id="L18">    }</span>
+
+    @Test
+    void forLoopBodyIsControlDependent() throws Exception {
+<span class="fc" id="L22">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/ForTest.java&quot;);</span>
+<span class="fc" id="L23">        assertTrue(PDGTestUtils.hasControlEdge(pdg, &quot;for&quot;, &quot;sum = sum + i&quot;),</span>
+                   &quot;Expected control edge: for -&gt; sum = sum + i&quot;);
+<span class="fc" id="L25">    }</span>
+
+    @Test
+    void forLoopInitReachesBody() throws Exception {
+<span class="fc" id="L29">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/ForTest.java&quot;);</span>
+<span class="fc" id="L30">        assertTrue(PDGTestUtils.hasDataEdge(pdg, &quot;sum&quot;, &quot;int sum = 0&quot;, &quot;sum = sum + i&quot;),</span>
+                   &quot;Expected data edge: int sum = 0 --sum--&gt; sum = sum + i&quot;);
+<span class="fc" id="L32">    }</span>
+
+    @Test
+    void forLoopBodySumReachesItself() throws Exception {
+<span class="fc" id="L36">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/ForTest.java&quot;);</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        boolean found = PDGTestUtils.hasDataEdge(pdg, &quot;sum&quot;, &quot;sum = sum + i&quot;, &quot;sum = sum + i&quot;)</span>
+<span class="pc bnc" id="L38" title="All 2 branches missed.">                     || PDGTestUtils.hasDataEdge(pdg, &quot;sum&quot;, &quot;int sum = 0&quot;, &quot;sum = sum + i&quot;);</span>
+<span class="fc" id="L39">        assertTrue(found, &quot;Expected a data edge for sum into the loop body&quot;);</span>
+<span class="fc" id="L40">    }</span>
+
+    @Test
+    void forLoopHasTrueAndFalseEdges() throws Exception {
+<span class="fc" id="L44">        org.lsmr.cfg.ControlFlowGraph cfg = PDGTestUtils.firstCFG(&quot;sample/ForTest.java&quot;);</span>
+<span class="fc" id="L45">        boolean foundTrue  = false;</span>
+<span class="fc" id="L46">        boolean foundFalse = false;</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        for (org.lsmr.cfg.Edge edge : cfg.edges()) {</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">            if (edge.label() == org.lsmr.cfg.Edge.EdgeLabel.TRUE)  foundTrue  = true;</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            if (edge.label() == org.lsmr.cfg.Edge.EdgeLabel.FALSE) foundFalse = true;</span>
+<span class="fc" id="L50">        }</span>
+<span class="fc" id="L51">        assertTrue(foundTrue,  &quot;for loop CFG must have a TRUE edge&quot;);</span>
+<span class="fc" id="L52">        assertTrue(foundFalse, &quot;for loop CFG must have a FALSE edge&quot;);</span>
+<span class="fc" id="L53">    }</span>
+
+
+    @Test
+    void doWhileProducesAtLeastOneControlEdge() throws Exception {
+<span class="fc" id="L58">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/DoWhileTest.java&quot;);</span>
+<span class="fc" id="L59">        long count = pdg.getEdges().stream()</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">                .filter(e -&gt; e.getType() == PDGEdge.Type.CONTROL)</span>
+<span class="fc" id="L61">                .count();</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        assertTrue(count &gt;= 1, &quot;do-while should produce at least one control edge&quot;);</span>
+<span class="fc" id="L63">    }</span>
+
+    @Test
+    void doWhileBodyIsControlDependent() throws Exception {
+<span class="fc" id="L67">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/DoWhileTest.java&quot;);</span>
+<span class="fc" id="L68">        assertTrue(PDGTestUtils.hasControlEdge(pdg, &quot;while&quot;, &quot;x = x + 1&quot;),</span>
+                   &quot;Expected control edge: while -&gt; x = x + 1&quot;);
+<span class="fc" id="L70">    }</span>
+
+
+    @Test
+    void doWhileBodyXReachesCondition() throws Exception {
+<span class="fc" id="L75">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/DoWhileTest.java&quot;);</span>
+<span class="fc" id="L76">        assertTrue(PDGTestUtils.hasDataEdge(pdg, &quot;x&quot;, &quot;x = x + 1&quot;, &quot;while ( x &lt; 3 )&quot;),</span>
+                   &quot;Expected loop-carried data edge: x = x + 1 --x--&gt; while condition&quot;);
+<span class="fc" id="L78">    }</span>
+
+    @Test
+    void doWhileBodyXUsesX() throws Exception {
+<span class="fc" id="L82">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/DoWhileTest.java&quot;);</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        boolean found = PDGTestUtils.hasDataEdge(pdg, &quot;x&quot;, &quot;int x = 0&quot;, &quot;x = x + 1&quot;)</span>
+<span class="pc bnc" id="L84" title="All 2 branches missed.">                     || PDGTestUtils.hasDataEdge(pdg, &quot;x&quot;, &quot;x = x + 1&quot;, &quot;x = x + 1&quot;);</span>
+<span class="fc" id="L85">        assertTrue(found, &quot;Expected a data edge for x into do-while body&quot;);</span>
+<span class="fc" id="L86">    }</span>
+
+    @Test
+    void doWhileInitXReachesBody() throws Exception {
+<span class="fc" id="L90">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/DoWhileTest.java&quot;);</span>
+<span class="fc" id="L91">        assertTrue(PDGTestUtils.hasDataEdge(pdg, &quot;x&quot;, &quot;int x = 0&quot;, &quot;x = x + 1&quot;),</span>
+                   &quot;Expected data edge: int x = 0 --x--&gt; x = x + 1 (first iteration)&quot;);
+<span class="fc" id="L93">    }</span>
+
+    @Test
+    void switchProducesAtLeastOneControlEdge() throws Exception {
+<span class="fc" id="L97">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/SwitchTest.java&quot;);</span>
+<span class="fc" id="L98">        long count = pdg.getEdges().stream()</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">                .filter(e -&gt; e.getType() == PDGEdge.Type.CONTROL)</span>
+<span class="fc" id="L100">                .count();</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">        assertTrue(count &gt;= 1, &quot;switch should produce at least one control edge&quot;);</span>
+<span class="fc" id="L102">    }</span>
+
+    @Test
+    void switchCase1BodyIsControlDependent() throws Exception {
+<span class="fc" id="L106">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/SwitchTest.java&quot;);</span>
+<span class="fc" id="L107">        assertTrue(PDGTestUtils.hasControlEdge(pdg, &quot;switch&quot;, &quot;y = 10&quot;),</span>
+                   &quot;Expected control edge: switch -&gt; y = 10 (case 1 body)&quot;);
+<span class="fc" id="L109">    }</span>
+
+    @Test
+    void switchCase2BodyIsControlDependent() throws Exception {
+<span class="fc" id="L113">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/SwitchTest.java&quot;);</span>
+<span class="fc" id="L114">        assertTrue(PDGTestUtils.hasControlEdge(pdg, &quot;switch&quot;, &quot;y = 20&quot;),</span>
+                   &quot;Expected control edge: switch -&gt; y = 20 (case 2 body)&quot;);
+<span class="fc" id="L116">    }</span>
+
+    @Test
+    void switchXDefReachesSwitchCondition() throws Exception {
+<span class="fc" id="L120">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/SwitchTest.java&quot;);</span>
+<span class="fc" id="L121">        assertTrue(PDGTestUtils.hasDataEdge(pdg, &quot;x&quot;, &quot;int x = 1&quot;, &quot;switch&quot;),</span>
+                   &quot;Expected data edge: int x = 1 --x--&gt; switch (x)&quot;);
+<span class="fc" id="L123">    }</span>
+
+    @Test
+    void switchHasCaseEdgesInCFG() throws Exception {
+<span class="fc" id="L127">        org.lsmr.cfg.ControlFlowGraph cfg = PDGTestUtils.firstCFG(&quot;sample/SwitchTest.java&quot;);</span>
+<span class="fc" id="L128">        boolean foundCase = false;</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        for (org.lsmr.cfg.Edge edge : cfg.edges()) {</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            if (edge.label() == org.lsmr.cfg.Edge.EdgeLabel.CASE) foundCase = true;</span>
+<span class="fc" id="L131">        }</span>
+<span class="fc" id="L132">        assertTrue(foundCase, &quot;switch CFG must have CASE edges&quot;);</span>
+<span class="fc" id="L133">    }</span>
+
+
+
+    @Test
+    void tryCatchProducesNodes() throws Exception {
+<span class="fc" id="L139">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/TryCatchTest.java&quot;);</span>
+<span class="fc" id="L140">        assertFalse(pdg.getNodes().isEmpty(), &quot;try-catch PDG should have nodes&quot;);</span>
+<span class="fc" id="L141">    }</span>
+
+    @Test
+    void tryCatchXDefReachesTryBody() throws Exception {
+<span class="fc" id="L145">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/TryCatchTest.java&quot;);</span>
+<span class="fc" id="L146">        assertTrue(PDGTestUtils.hasDataEdge(pdg, &quot;x&quot;, &quot;int x = 1&quot;, &quot;x = x + 1&quot;),</span>
+                   &quot;Expected data edge: int x = 1 --x--&gt; x = x + 1 (try body)&quot;);
+<span class="fc" id="L148">    }</span>
+
+    @Test
+    void tryCatchHasThrownOrCaughtEdgeInCFG() throws Exception {
+<span class="fc" id="L152">        org.lsmr.cfg.ControlFlowGraph cfg = PDGTestUtils.firstCFG(&quot;sample/TryCatchTest.java&quot;);</span>
+<span class="fc" id="L153">        boolean found = false;</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        for (org.lsmr.cfg.Edge edge : cfg.edges()) {</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">            if (edge.label() == org.lsmr.cfg.Edge.EdgeLabel.THROWN</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">                    || edge.label() == org.lsmr.cfg.Edge.EdgeLabel.CAUGHT) {</span>
+<span class="fc" id="L157">                found = true;</span>
+            }
+<span class="fc" id="L159">        }</span>
+<span class="fc" id="L160">        assertTrue(found, &quot;try-catch CFG must have THROWN or CAUGHT edges&quot;);</span>
+<span class="fc" id="L161">    }</span>
+
+    @Test
+    void tryCatchNoBookkeepingNodesInPDG() throws Exception {
+<span class="fc" id="L165">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/TryCatchTest.java&quot;);</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        for (PDGNode node : pdg.getNodes()) {</span>
+<span class="fc" id="L167">            String lbl = node.getLabel();</span>
+<span class="pc bpc" id="L168" title="3 of 6 branches missed.">            assertFalse(lbl.equals(&quot;*ENTRY*&quot;) || lbl.equals(&quot;*EXIT*&quot;) || lbl.equals(&quot;*THROWN*&quot;),</span>
+                        &quot;Bookkeeping node should not appear in PDG: &quot; + lbl);
+<span class="fc" id="L170">        }</span>
+<span class="fc" id="L171">    }</span>
+
+ 
+    @Test
+    void nestedIfProducesAtLeastTwoControlEdges() throws Exception {
+<span class="fc" id="L176">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/NestedIfTest.java&quot;);</span>
+<span class="fc" id="L177">        long count = pdg.getEdges().stream()</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">                .filter(e -&gt; e.getType() == PDGEdge.Type.CONTROL)</span>
+<span class="fc" id="L179">                .count();</span>
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">        assertTrue(count &gt;= 2, &quot;Nested if should produce at least two control edges&quot;);</span>
+<span class="fc" id="L181">    }</span>
+
+    @Test
+    void nestedIfInnerBodyControlDependent() throws Exception {
+<span class="fc" id="L185">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/NestedIfTest.java&quot;);</span>
+<span class="fc" id="L186">        assertTrue(PDGTestUtils.hasControlEdge(pdg, &quot;if&quot;, &quot;x = 1&quot;),</span>
+                   &quot;Expected control edge: if -&gt; x = 1&quot;);
+<span class="fc" id="L188">    }</span>
+
+    @Test
+    void nestedIfXDefReachesOuterCondition() throws Exception {
+<span class="fc" id="L192">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/NestedIfTest.java&quot;);</span>
+<span class="fc" id="L193">        assertTrue(PDGTestUtils.hasDataEdge(pdg, &quot;x&quot;, &quot;int x = 0&quot;, &quot;if&quot;),</span>
+                   &quot;Expected data edge: int x = 0 --x--&gt; if (x == 0)&quot;);
+<span class="fc" id="L195">    }</span>
+
+    @Test
+    void nestedIfYDefReachesInnerCondition() throws Exception {
+<span class="fc" id="L199">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/NestedIfTest.java&quot;);</span>
+<span class="fc" id="L200">        assertTrue(PDGTestUtils.hasDataEdge(pdg, &quot;y&quot;, &quot;int y = 0&quot;, &quot;if&quot;),</span>
+                   &quot;Expected data edge: int y = 0 --y--&gt; if (y == 0)&quot;);
+<span class="fc" id="L202">    }</span>
+
+    @Test
+    void nestedIfInitNotControlDependent() throws Exception {
+<span class="fc" id="L206">        ProgramDependenceGraph pdg = PDGTestUtils.buildPDG(&quot;sample/NestedIfTest.java&quot;);</span>
+<span class="fc" id="L207">        assertFalse(PDGTestUtils.hasControlEdge(pdg, &quot;if&quot;, &quot;int x = 0&quot;),</span>
+                    &quot;int x = 0 should not be control dependent on any if&quot;);
+<span class="fc" id="L209">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

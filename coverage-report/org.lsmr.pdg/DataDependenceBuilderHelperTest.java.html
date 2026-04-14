@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DataDependenceBuilderHelperTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">org.lsmr.pdg</a> &gt; <span class="el_source">DataDependenceBuilderHelperTest.java</span></div><h1>DataDependenceBuilderHelperTest.java</h1><pre class="source lang-java linenums">package org.lsmr.pdg;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.lang.reflect.Method;
+import java.util.Set;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+<span class="fc" id="L11">public class DataDependenceBuilderHelperTest {</span>
+
+    private DataDependenceBuilder builder;
+
+    @BeforeEach
+    void setUp() {
+<span class="fc" id="L17">        builder = new DataDependenceBuilder();</span>
+<span class="fc" id="L18">    }</span>
+
+    private Object invoke(String methodName, Class&lt;?&gt;[] types, Object... args) throws Exception {
+<span class="fc" id="L21">        Method m = DataDependenceBuilder.class.getDeclaredMethod(methodName, types);</span>
+<span class="fc" id="L22">        m.setAccessible(true);</span>
+<span class="fc" id="L23">        return m.invoke(builder, args);</span>
+    }
+
+    private String defined(String label) throws Exception {
+<span class="fc" id="L27">        return (String) invoke(&quot;getDefinedVariable&quot;, new Class&lt;?&gt;[]{String.class}, label);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private Set&lt;String&gt; used(String label) throws Exception {
+<span class="fc" id="L32">        return (Set&lt;String&gt;) invoke(&quot;getUsedVariables&quot;, new Class&lt;?&gt;[]{String.class}, label);</span>
+    }
+
+    private String stripTypePrefix(String s) throws Exception {
+<span class="fc" id="L36">        return (String) invoke(&quot;stripTypePrefix&quot;, new Class&lt;?&gt;[]{String.class}, s);</span>
+    }
+
+    private int indexOfTopLevelAssignmentOp(String s) throws Exception {
+<span class="fc" id="L40">        return (Integer) invoke(&quot;indexOfTopLevelAssignmentOp&quot;, new Class&lt;?&gt;[]{String.class}, s);</span>
+    }
+
+    private String stripCommentsAndLiterals(String s) throws Exception {
+<span class="fc" id="L44">        return (String) invoke(&quot;stripCommentsAndLiterals&quot;, new Class&lt;?&gt;[]{String.class}, s);</span>
+    }
+
+    private String contentsInsideOuterParens(String s) throws Exception {
+<span class="fc" id="L48">        return (String) invoke(&quot;contentsInsideOuterParens&quot;, new Class&lt;?&gt;[]{String.class}, s);</span>
+    }
+
+    private boolean isPostIncDec(String s) throws Exception {
+<span class="fc" id="L52">        return (Boolean) invoke(&quot;isPostIncDec&quot;, new Class&lt;?&gt;[]{String.class}, s);</span>
+    }
+
+    private boolean isPreIncDec(String s) throws Exception {
+<span class="fc" id="L56">        return (Boolean) invoke(&quot;isPreIncDec&quot;, new Class&lt;?&gt;[]{String.class}, s);</span>
+    }
+
+    private String extractIncDecIdentifier(String s) throws Exception {
+<span class="fc" id="L60">        return (String) invoke(&quot;extractIncDecIdentifier&quot;, new Class&lt;?&gt;[]{String.class}, s);</span>
+    }
+
+    private String stripEnclosingParens(String s) throws Exception {
+<span class="fc" id="L64">        return (String) invoke(&quot;stripEnclosingParens&quot;, new Class&lt;?&gt;[]{String.class}, s);</span>
+    }
+
+    private boolean isSimpleIdentifier(String s) throws Exception {
+<span class="fc" id="L68">        return (Boolean) invoke(&quot;isSimpleIdentifier&quot;, new Class&lt;?&gt;[]{String.class}, s);</span>
+    }
+
+    private boolean looksLikeReferenceType(String s) throws Exception {
+<span class="fc" id="L72">        return (Boolean) invoke(&quot;looksLikeReferenceType&quot;, new Class&lt;?&gt;[]{String.class}, s);</span>
+    }
+
+    @Test
+    void definedVariableForPostIncrement() throws Exception {
+<span class="fc" id="L77">        assertEquals(&quot;x&quot;, defined(&quot;7: x++;&quot;));</span>
+<span class="fc" id="L78">    }</span>
+
+    @Test
+    void definedVariableForPreDecrement() throws Exception {
+<span class="fc" id="L82">        assertEquals(&quot;x&quot;, defined(&quot;7: --x;&quot;));</span>
+<span class="fc" id="L83">    }</span>
+
+    @Test
+    void definedVariableForArrayAssignmentIsArrayName() throws Exception {
+<span class="fc" id="L87">        assertEquals(&quot;a&quot;, defined(&quot;7: a[i] = 1;&quot;));</span>
+<span class="fc" id="L88">    }</span>
+
+    @Test
+    void definedVariableForFieldAssignmentUsesFieldName() throws Exception {
+<span class="fc" id="L92">        assertEquals(&quot;field&quot;, defined(&quot;7: obj.field = x;&quot;));</span>
+<span class="fc" id="L93">    }</span>
+
+    @Test
+    void definedVariableForForInitializer() throws Exception {
+<span class="fc" id="L97">        assertEquals(&quot;i&quot;, defined(&quot;7: for (int i = 0; i &lt; n; i++)&quot;));</span>
+<span class="fc" id="L98">    }</span>
+
+    @Test
+    void definedVariableForReferenceTypeDeclaration() throws Exception {
+<span class="fc" id="L102">        assertEquals(&quot;t&quot;, defined(&quot;7: String t = s;&quot;));</span>
+<span class="fc" id="L103">    }</span>
+
+    @Test
+    void usedVariablesForReturnStatement() throws Exception {
+<span class="fc" id="L107">        Set&lt;String&gt; vars = used(&quot;7: return x + y;&quot;);</span>
+<span class="fc" id="L108">        assertTrue(vars.contains(&quot;x&quot;));</span>
+<span class="fc" id="L109">        assertTrue(vars.contains(&quot;y&quot;));</span>
+<span class="fc" id="L110">    }</span>
+
+    @Test
+    void usedVariablesForThrowStatement() throws Exception {
+<span class="fc" id="L114">        Set&lt;String&gt; vars = used(&quot;7: throw ex;&quot;);</span>
+<span class="fc" id="L115">        assertTrue(vars.contains(&quot;ex&quot;));</span>
+<span class="fc" id="L116">    }</span>
+
+    @Test
+    void usedVariablesForCaseLabel() throws Exception {
+<span class="fc" id="L120">        Set&lt;String&gt; vars = used(&quot;7: case x + 1:&quot;);</span>
+<span class="fc" id="L121">        assertTrue(vars.contains(&quot;x&quot;));</span>
+<span class="fc" id="L122">    }</span>
+
+    @Test
+    void usedVariablesForCompoundAssignmentIncludeLhsAndRhs() throws Exception {
+<span class="fc" id="L126">        Set&lt;String&gt; vars = used(&quot;7: x += y;&quot;);</span>
+<span class="fc" id="L127">        assertTrue(vars.contains(&quot;y&quot;));</span>
+<span class="fc" id="L128">    }</span>
+
+    @Test
+    void usedVariablesForIndexedAssignmentIncludeIndexVariables() throws Exception {
+<span class="fc" id="L132">        Set&lt;String&gt; vars = used(&quot;7: a[i + j] = 1;&quot;);</span>
+<span class="fc" id="L133">        assertTrue(vars.contains(&quot;i&quot;));</span>
+<span class="fc" id="L134">        assertTrue(vars.contains(&quot;j&quot;));</span>
+<span class="fc" id="L135">    }</span>
+
+    @Test
+    void usedVariablesIgnoreMethodNameButKeepArguments() throws Exception {
+<span class="fc" id="L139">        Set&lt;String&gt; vars = used(&quot;7: foo(bar, baz);&quot;);</span>
+<span class="fc" id="L140">        assertFalse(vars.contains(&quot;foo&quot;));</span>
+<span class="fc" id="L141">        assertTrue(vars.contains(&quot;bar&quot;));</span>
+<span class="fc" id="L142">        assertTrue(vars.contains(&quot;baz&quot;));</span>
+<span class="fc" id="L143">    }</span>
+
+    @Test
+    void usedVariablesIgnoreStringLiteralAndComment() throws Exception {
+<span class="fc" id="L147">        Set&lt;String&gt; vars = used(&quot;7: print(\&quot;hello\&quot;) + y; // z&quot;);</span>
+<span class="fc" id="L148">        assertTrue(vars.contains(&quot;y&quot;));</span>
+<span class="fc" id="L149">        assertFalse(vars.contains(&quot;hello&quot;));</span>
+<span class="fc" id="L150">        assertFalse(vars.contains(&quot;z&quot;));</span>
+<span class="fc" id="L151">    }</span>
+
+    @Test
+    void stripTypePrefixHandlesPrimitive() throws Exception {
+<span class="fc" id="L155">        assertEquals(&quot;x = 1;&quot;, stripTypePrefix(&quot;int x = 1;&quot;));</span>
+<span class="fc" id="L156">    }</span>
+
+    @Test
+    void stripTypePrefixHandlesReferenceType() throws Exception {
+<span class="fc" id="L160">        assertEquals(&quot;t = s;&quot;, stripTypePrefix(&quot;String t = s;&quot;));</span>
+<span class="fc" id="L161">    }</span>
+
+    @Test
+    void assignmentIndexIgnoresEqualityOperator() throws Exception {
+<span class="fc" id="L165">        assertEquals(-1, indexOfTopLevelAssignmentOp(&quot;x == y&quot;));</span>
+<span class="fc" id="L166">    }</span>
+
+    @Test
+    void assignmentIndexFindsCompoundAssignment() throws Exception {
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">        assertTrue(indexOfTopLevelAssignmentOp(&quot;x += y&quot;) &gt;= 0);</span>
+<span class="fc" id="L171">    }</span>
+
+    @Test
+    void stripCommentsAndLiteralsRemovesQuotedTextAndComments() throws Exception {
+<span class="fc" id="L175">        String result = stripCommentsAndLiterals(&quot;x = \&quot;abc\&quot;; // comment&quot;);</span>
+<span class="fc" id="L176">        assertFalse(result.contains(&quot;abc&quot;));</span>
+<span class="fc" id="L177">        assertFalse(result.contains(&quot;comment&quot;));</span>
+<span class="fc" id="L178">        assertTrue(result.contains(&quot;x =&quot;));</span>
+<span class="fc" id="L179">    }</span>
+
+    @Test
+    void contentsInsideOuterParensExtractsCondition() throws Exception {
+<span class="fc" id="L183">        assertEquals(&quot;x &lt; 3&quot;, contentsInsideOuterParens(&quot;while (x &lt; 3)&quot;));</span>
+<span class="fc" id="L184">    }</span>
+
+    @Test
+    void postIncDecDetectionWorks() throws Exception {
+<span class="fc" id="L188">        assertTrue(isPostIncDec(&quot;x++;&quot;));</span>
+<span class="fc" id="L189">        assertFalse(isPostIncDec(&quot;x = x + 1;&quot;));</span>
+<span class="fc" id="L190">    }</span>
+
+    @Test
+    void preIncDecDetectionWorks() throws Exception {
+<span class="fc" id="L194">        assertTrue(isPreIncDec(&quot;++x;&quot;));</span>
+<span class="fc" id="L195">        assertFalse(isPreIncDec(&quot;x++;&quot;));</span>
+<span class="fc" id="L196">    }</span>
+
+    @Test
+    void extractIncDecIdentifierWorks() throws Exception {
+<span class="fc" id="L200">    	assertEquals(&quot;x;&quot;, extractIncDecIdentifier(&quot;++x;&quot;));</span>
+<span class="fc" id="L201">    	assertEquals(&quot;y&quot;, extractIncDecIdentifier(&quot;y--;&quot;));</span>
+<span class="fc" id="L202">    }</span>
+
+    @Test
+    void stripEnclosingParensRemovesOuterLayers() throws Exception {
+<span class="fc" id="L206">        assertEquals(&quot;x&quot;, stripEnclosingParens(&quot;(((x)))&quot;));</span>
+<span class="fc" id="L207">    }</span>
+
+    @Test
+    void simpleIdentifierCheckWorks() throws Exception {
+<span class="fc" id="L211">        assertTrue(isSimpleIdentifier(&quot;abc123&quot;));</span>
+<span class="fc" id="L212">        assertFalse(isSimpleIdentifier(&quot;a.b&quot;));</span>
+<span class="fc" id="L213">    }</span>
+
+    @Test
+    void looksLikeReferenceTypeWorks() throws Exception {
+<span class="fc" id="L217">        assertTrue(looksLikeReferenceType(&quot;String&quot;));</span>
+<span class="fc" id="L218">        assertFalse(looksLikeReferenceType(&quot;int&quot;));</span>
+<span class="fc" id="L219">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

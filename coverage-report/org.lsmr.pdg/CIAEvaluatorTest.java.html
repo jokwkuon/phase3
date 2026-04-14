@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CIAEvaluatorTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">org.lsmr.pdg</a> &gt; <span class="el_source">CIAEvaluatorTest.java</span></div><h1>CIAEvaluatorTest.java</h1><pre class="source lang-java linenums">package org.lsmr.pdg;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+<span class="fc" id="L15">public class CIAEvaluatorTest {</span>
+
+<span class="fc" id="L17">    private static final Path SAMPLE = Paths.get(&quot;sample/CIASample.java&quot;);</span>
+
+    private Path writeGT(Path dir, String content) throws Exception {
+<span class="fc" id="L20">        Path f = dir.resolve(&quot;gt.txt&quot;);</span>
+<span class="fc" id="L21">        Files.writeString(f, content);</span>
+<span class="fc" id="L22">        return f;</span>
+    }
+
+    // --- parseGroundTruth tests ---
+
+    @Test
+    void parsesSingleScenario(@TempDir Path tmp) throws Exception {
+<span class="fc" id="L29">        Path gt = writeGT(tmp, &quot;CHANGE_POINT: 4\nIDEAL: 10 12 13\n&quot;);</span>
+<span class="fc" id="L30">        List&lt;CIAEvaluator.Scenario&gt; scenarios = CIAEvaluator.parseGroundTruth(gt);</span>
+<span class="fc" id="L31">        assertEquals(1, scenarios.size());</span>
+<span class="fc" id="L32">        assertEquals(4, scenarios.get(0).changePoint);</span>
+<span class="fc" id="L33">        assertEquals(Arrays.asList(10, 12, 13), scenarios.get(0).idealImpacted);</span>
+<span class="fc" id="L34">    }</span>
+
+    @Test
+    void parsesMultipleScenarios(@TempDir Path tmp) throws Exception {
+<span class="fc" id="L38">        Path gt = writeGT(tmp,</span>
+            &quot;CHANGE_POINT: 2\nIDEAL: 5 7 8\n\nCHANGE_POINT: 17\nIDEAL: 19 20\n&quot;);
+<span class="fc" id="L40">        List&lt;CIAEvaluator.Scenario&gt; scenarios = CIAEvaluator.parseGroundTruth(gt);</span>
+<span class="fc" id="L41">        assertEquals(2, scenarios.size());</span>
+<span class="fc" id="L42">        assertEquals(2,  scenarios.get(0).changePoint);</span>
+<span class="fc" id="L43">        assertEquals(17, scenarios.get(1).changePoint);</span>
+<span class="fc" id="L44">    }</span>
+
+    @Test
+    void ignoresCommentLines(@TempDir Path tmp) throws Exception {
+<span class="fc" id="L48">        Path gt = writeGT(tmp,</span>
+            &quot;# This is a comment\nCHANGE_POINT: 4\nIDEAL: 10 12 13\n&quot;);
+<span class="fc" id="L50">        List&lt;CIAEvaluator.Scenario&gt; scenarios = CIAEvaluator.parseGroundTruth(gt);</span>
+<span class="fc" id="L51">        assertEquals(1, scenarios.size());</span>
+<span class="fc" id="L52">        assertEquals(4, scenarios.get(0).changePoint);</span>
+<span class="fc" id="L53">    }</span>
+
+    @Test
+    void throwsOnEmptyFile(@TempDir Path tmp) throws Exception {
+<span class="fc" id="L57">        Path gt = writeGT(tmp, &quot;&quot;);</span>
+<span class="fc" id="L58">        assertThrows(IllegalArgumentException.class,</span>
+<span class="nc" id="L59">            () -&gt; CIAEvaluator.parseGroundTruth(gt));</span>
+<span class="fc" id="L60">    }</span>
+
+    @Test
+    void throwsOnOnlyComments(@TempDir Path tmp) throws Exception {
+<span class="fc" id="L64">        Path gt = writeGT(tmp, &quot;# only comments\n&quot;);</span>
+<span class="fc" id="L65">        assertThrows(IllegalArgumentException.class,</span>
+<span class="nc" id="L66">            () -&gt; CIAEvaluator.parseGroundTruth(gt));</span>
+<span class="fc" id="L67">    }</span>
+
+    // --- Scenario class tests ---
+
+    @Test
+    void scenarioStoresValues() {
+<span class="fc" id="L73">        CIAEvaluator.Scenario s = new CIAEvaluator.Scenario(7, Arrays.asList(9, 10, 13));</span>
+<span class="fc" id="L74">        assertEquals(7, s.changePoint);</span>
+<span class="fc" id="L75">        assertEquals(Arrays.asList(9, 10, 13), s.idealImpacted);</span>
+<span class="fc" id="L76">    }</span>
+
+    @Test
+    void scenarioIdealIsUnmodifiable() {
+<span class="fc" id="L80">        CIAEvaluator.Scenario s = new CIAEvaluator.Scenario(7, Arrays.asList(9, 10));</span>
+<span class="fc" id="L81">        assertThrows(UnsupportedOperationException.class,</span>
+<span class="nc" id="L82">            () -&gt; s.idealImpacted.add(99));</span>
+<span class="fc" id="L83">    }</span>
+
+    // --- main() / full pipeline tests ---
+
+    @Test
+    void mainProducesOutputForValidInputs(@TempDir Path tmp) throws Exception {
+<span class="fc" id="L89">        Path gt = writeGT(tmp, &quot;CHANGE_POINT: 4\nIDEAL: 10 12 13\n&quot;);</span>
+
+<span class="fc" id="L91">        PrintStream oldOut = System.out;</span>
+<span class="fc" id="L92">        ByteArrayOutputStream buf = new ByteArrayOutputStream();</span>
+<span class="fc" id="L93">        System.setOut(new PrintStream(buf));</span>
+        try {
+<span class="fc" id="L95">            CIAEvaluator.main(new String[]{SAMPLE.toString(), gt.toString()});</span>
+        } finally {
+<span class="fc" id="L97">            System.setOut(oldOut);</span>
+        }
+
+<span class="fc" id="L100">        String output = buf.toString();</span>
+<span class="fc" id="L101">        assertTrue(output.contains(&quot;MACRO-AVG&quot;), &quot;Output should contain MACRO-AVG line&quot;);</span>
+<span class="fc" id="L102">        assertTrue(output.contains(&quot;ChangePoint&quot;), &quot;Output should contain header&quot;);</span>
+<span class="fc" id="L103">    }</span>
+
+    @Test
+    void mainReportsFPsForBlockNodes(@TempDir Path tmp) throws Exception {
+<span class="fc" id="L107">        Path gt = writeGT(tmp, &quot;CHANGE_POINT: 4\nIDEAL: 10 12 13\n&quot;);</span>
+
+<span class="fc" id="L109">        PrintStream oldOut = System.out;</span>
+<span class="fc" id="L110">        ByteArrayOutputStream buf = new ByteArrayOutputStream();</span>
+<span class="fc" id="L111">        System.setOut(new PrintStream(buf));</span>
+        try {
+<span class="fc" id="L113">            CIAEvaluator.main(new String[]{SAMPLE.toString(), gt.toString()});</span>
+        } finally {
+<span class="fc" id="L115">            System.setOut(oldOut);</span>
+        }
+
+<span class="fc" id="L118">        assertTrue(buf.toString().contains(&quot;FP&quot;), &quot;Should report false positives for block nodes&quot;);</span>
+<span class="fc" id="L119">    }</span>
+
+    @Test
+    void mainNoFalseNegativesAcrossAllChangePoints(@TempDir Path tmp) throws Exception {
+<span class="fc" id="L123">        Path gt = writeGT(tmp,</span>
+            &quot;CHANGE_POINT: 2\nIDEAL: 5 7 8 9 10 12 13\n\n&quot; +
+            &quot;CHANGE_POINT: 4\nIDEAL: 10 12 13\n\n&quot; +
+            &quot;CHANGE_POINT: 7\nIDEAL: 9 10 12 13\n\n&quot; +
+            &quot;CHANGE_POINT: 17\nIDEAL: 19 20 21 22\n&quot;);
+
+<span class="fc" id="L129">        PrintStream oldOut = System.out;</span>
+<span class="fc" id="L130">        ByteArrayOutputStream buf = new ByteArrayOutputStream();</span>
+<span class="fc" id="L131">        System.setOut(new PrintStream(buf));</span>
+        try {
+<span class="fc" id="L133">            CIAEvaluator.main(new String[]{SAMPLE.toString(), gt.toString()});</span>
+        } finally {
+<span class="fc" id="L135">            System.setOut(oldOut);</span>
+        }
+
+<span class="fc" id="L138">        assertFalse(buf.toString().contains(&quot;FN (missed)&quot;),</span>
+            &quot;Should have no false negatives (recall=1.0)&quot;);
+<span class="fc" id="L140">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

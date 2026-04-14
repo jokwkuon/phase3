@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ControlDependenceBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">org.lsmr.pdg</a> &gt; <span class="el_source">ControlDependenceBuilder.java</span></div><h1>ControlDependenceBuilder.java</h1><pre class="source lang-java linenums">package org.lsmr.pdg;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+
+import org.lsmr.cfg.ControlFlowGraph;
+import org.lsmr.cfg.Edge;
+import org.lsmr.cfg.Edge.EdgeLabel;
+import org.lsmr.cfg.Node;
+
+<span class="fc" id="L16">public class ControlDependenceBuilder {</span>
+
+    private static final String ENTRY  = &quot;*ENTRY*&quot;;
+    private static final String EXIT   = &quot;*EXIT*&quot;;
+    private static final String THROWN = &quot;*THROWN*&quot;;
+
+    public void addControlDependences(ControlFlowGraph cfg,
+                                      ProgramDependenceGraph pdg,
+                                      Map&lt;Node, PDGNode&gt; nodeMap) {
+
+<span class="fc" id="L26">        List&lt;Node&gt; allNodes = cfg.nodes();</span>
+<span class="fc" id="L27">        Map&lt;Node, Set&lt;Node&gt;&gt; postDoms = computePostDominators(cfg, allNodes);</span>
+
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        for (Node x : allNodes) {</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">            if (isBookkeeping(x)) continue;</span>
+
+<span class="fc" id="L32">            boolean isBranch = false;</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">            for (Edge e : x.outEdges()) {</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">                if (e.label() == EdgeLabel.TRUE</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">                        || e.label() == EdgeLabel.FALSE</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">                        || e.label() == EdgeLabel.CASE) {</span>
+<span class="fc" id="L37">                    isBranch = true;</span>
+<span class="fc" id="L38">                    break;</span>
+                }
+<span class="fc" id="L40">            }</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            if (!isBranch) continue;</span>
+
+<span class="fc" id="L43">            Set&lt;Node&gt; xPostDoms = postDoms.get(x);</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">            if (xPostDoms == null) xPostDoms = new HashSet&lt;&gt;();</span>
+
+<span class="fc" id="L46">            PDGNode pdgX = nodeMap.get(x);</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">            if (pdgX == null) continue;</span>
+
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            for (Edge e : x.outEdges()) {</span>
+<span class="fc" id="L50">                Node start = e.target();</span>
+<span class="pc bpc" id="L51" title="1 of 4 branches missed.">                if (start == null || isBookkeeping(start)) continue;</span>
+
+<span class="fc" id="L53">                Queue&lt;Node&gt; worklist = new LinkedList&lt;&gt;();</span>
+<span class="fc" id="L54">                Set&lt;Node&gt; visited = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L55">                worklist.add(start);</span>
+<span class="fc" id="L56">                visited.add(start);</span>
+
+<span class="fc bfc" id="L58" title="All 2 branches covered.">                while (!worklist.isEmpty()) {</span>
+<span class="fc" id="L59">                    Node n = worklist.poll();</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">                    if (xPostDoms.contains(n)) continue;</span>
+
+<span class="fc" id="L62">                    PDGNode pdgN = nodeMap.get(n);</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">                    if (pdgN != null)</span>
+<span class="fc" id="L64">                        pdg.addEdge(new PDGEdge(pdgX, pdgN, PDGEdge.Type.CONTROL, null));</span>
+
+<span class="fc bfc" id="L66" title="All 2 branches covered.">                    for (Edge out : n.outEdges()) {</span>
+<span class="fc" id="L67">                        Node succ = out.target();</span>
+<span class="pc bpc" id="L68" title="2 of 6 branches missed.">                        if (succ != null &amp;&amp; !isBookkeeping(succ) &amp;&amp; visited.add(succ))</span>
+<span class="fc" id="L69">                            worklist.add(succ);</span>
+<span class="fc" id="L70">                    }</span>
+<span class="fc" id="L71">                }</span>
+<span class="fc" id="L72">            }</span>
+<span class="fc" id="L73">        }</span>
+<span class="fc" id="L74">    }</span>
+
+    private Map&lt;Node, Set&lt;Node&gt;&gt; computePostDominators(ControlFlowGraph cfg,
+                                                        List&lt;Node&gt; allNodes) {
+<span class="fc" id="L78">        Set&lt;Node&gt; exits = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L79">        exits.add(cfg.normalExit);</span>
+<span class="fc" id="L80">        exits.add(cfg.abruptExit);</span>
+
+<span class="fc" id="L82">        Map&lt;Node, Set&lt;Node&gt;&gt; postDoms = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L83">        Set&lt;Node&gt; allSet = new HashSet&lt;&gt;(allNodes);</span>
+
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        for (Node n : allNodes) {</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">            if (exits.contains(n)) {</span>
+<span class="fc" id="L87">                Set&lt;Node&gt; s = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L88">                s.add(n);</span>
+<span class="fc" id="L89">                postDoms.put(n, s);</span>
+<span class="fc" id="L90">            } else {</span>
+<span class="fc" id="L91">                postDoms.put(n, new HashSet&lt;&gt;(allSet));</span>
+            }
+<span class="fc" id="L93">        }</span>
+
+<span class="fc" id="L95">        boolean changed = true;</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        while (changed) {</span>
+<span class="fc" id="L97">            changed = false;</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">            for (Node n : allNodes) {</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">                if (exits.contains(n)) continue;</span>
+<span class="fc" id="L100">                Set&lt;Node&gt; newPD = null;</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">                for (Edge e : n.outEdges()) {</span>
+<span class="fc" id="L102">                    Node succ = e.target();</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">                    if (succ == null) continue;</span>
+<span class="fc" id="L104">                    Set&lt;Node&gt; succPD = postDoms.get(succ);</span>
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">                    if (succPD == null) continue;</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">                    if (newPD == null) newPD = new HashSet&lt;&gt;(succPD);</span>
+<span class="fc" id="L107">                    else newPD.retainAll(succPD);</span>
+<span class="fc" id="L108">                }</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">                if (newPD == null) newPD = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L110">                newPD.add(n);</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">                if (!newPD.equals(postDoms.get(n))) {</span>
+<span class="fc" id="L112">                    postDoms.put(n, newPD);</span>
+<span class="fc" id="L113">                    changed = true;</span>
+                }
+<span class="fc" id="L115">            }</span>
+        }
+<span class="fc" id="L117">        return postDoms;</span>
+    }
+
+    private boolean isBookkeeping(Node n) {
+<span class="fc" id="L121">        String label = n.label();</span>
+<span class="fc bfc" id="L122" title="All 6 branches covered.">        return label.equals(ENTRY) || label.equals(EXIT) || label.equals(THROWN);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

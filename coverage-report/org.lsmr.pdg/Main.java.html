@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Main.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">org.lsmr.pdg</a> &gt; <span class="el_source">Main.java</span></div><h1>Main.java</h1><pre class="source lang-java linenums">package org.lsmr.pdg;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRLexer;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.CompilationUnitContext;
+import org.lsmr.cfg.ControlFlowGraph;
+import org.lsmr.cfg.Edge;
+import org.lsmr.cfg.Node;
+import org.lsmr.cfg.StatementNodeBuilder;
+
+<span class="nc" id="L21">public class Main {</span>
+
+    public static void main(String[] args) {
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        if (args.length != 1) {</span>
+<span class="nc" id="L25">            System.err.println(&quot;Usage: java org.lsmr.pdg.Main &lt;Java-source-file&gt;&quot;);</span>
+<span class="nc" id="L26">            System.exit(1);</span>
+        }
+
+<span class="nc" id="L29">        Path input = Paths.get(args[0]);</span>
+
+        try {
+<span class="nc" id="L32">            List&lt;ControlFlowGraph&gt; cfgs = buildCFGs(input);</span>
+
+<span class="nc" id="L34">            System.out.println(&quot;Built &quot; + cfgs.size() + &quot; CFG(s) from: &quot; + input);</span>
+<span class="nc" id="L35">            System.out.println();</span>
+
+<span class="nc" id="L37">            ProgramDependenceGraphBuilder pdgBuilder = new ProgramDependenceGraphBuilder();</span>
+
+<span class="nc bnc" id="L39" title="All 2 branches missed.">            for (ControlFlowGraph cfg : cfgs) {</span>
+<span class="nc" id="L40">                printCFG(cfg);</span>
+
+<span class="nc" id="L42">                ProgramDependenceGraph pdg = pdgBuilder.build(cfg);</span>
+<span class="nc" id="L43">                printPDG(pdg);</span>
+
+                // Write DOT file next to the input file
+<span class="nc" id="L46">                String safeName = cfg.name().replaceAll(&quot;[^A-Za-z0-9_]&quot;, &quot;_&quot;);</span>
+<span class="nc" id="L47">                Path outDir = input.toAbsolutePath().getParent();</span>
+<span class="nc" id="L48">                Path dotFile = outDir.resolve(safeName + &quot;_pdg.dot&quot;);</span>
+<span class="nc" id="L49">                Files.write(dotFile, toDot(pdg, cfg.name()).getBytes(StandardCharsets.UTF_8));</span>
+
+<span class="nc" id="L51">                System.out.println(&quot;Wrote DOT file: &quot; + dotFile);</span>
+<span class="nc" id="L52">                System.out.println(&quot;--------------------------------------------------&quot;);</span>
+<span class="nc" id="L53">            }</span>
+<span class="nc" id="L54">        } catch (IOException e) {</span>
+<span class="nc" id="L55">            System.err.println(&quot;Could not read file: &quot; + input);</span>
+<span class="nc" id="L56">            e.printStackTrace();</span>
+<span class="nc" id="L57">            System.exit(2);</span>
+<span class="nc" id="L58">        } catch (Exception e) {</span>
+<span class="nc" id="L59">            System.err.println(&quot;Failed to parse/build CFG or PDG for: &quot; + input);</span>
+<span class="nc" id="L60">            e.printStackTrace();</span>
+<span class="nc" id="L61">            System.exit(3);</span>
+<span class="nc" id="L62">        }</span>
+<span class="nc" id="L63">    }</span>
+
+    // parses a Java 1.2 source file and returns one CFG per method
+    public static List&lt;ControlFlowGraph&gt; buildCFGs(Path inputFile) throws IOException {
+<span class="fc" id="L67">        Java1_2ANTLRLexer lexer =</span>
+<span class="fc" id="L68">            new Java1_2ANTLRLexer(CharStreams.fromPath(inputFile));</span>
+<span class="fc" id="L69">        CommonTokenStream tokens = new CommonTokenStream(lexer);</span>
+<span class="fc" id="L70">        Java1_2ANTLRParser parser = new Java1_2ANTLRParser(tokens);</span>
+
+<span class="fc" id="L72">        CompilationUnitContext root = parser.compilationUnit();</span>
+
+<span class="fc" id="L74">        StatementNodeBuilder builder = new StatementNodeBuilder();</span>
+<span class="fc" id="L75">        root.accept(builder);</span>
+
+<span class="fc" id="L77">        return builder.getCFGs();</span>
+    }
+
+    private static void printCFG(ControlFlowGraph cfg) {
+<span class="nc" id="L81">        System.out.println(&quot;=== CFG: &quot; + cfg.name() + &quot; ===&quot;);</span>
+<span class="nc" id="L82">        System.out.println(&quot;Nodes:&quot;);</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        for (Node node : cfg.nodes()) {</span>
+<span class="nc" id="L84">            System.out.println(&quot;  &quot; + node.label());</span>
+<span class="nc" id="L85">        }</span>
+<span class="nc" id="L86">        System.out.println(&quot;Edges:&quot;);</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        for (Edge edge : cfg.edges()) {</span>
+<span class="nc" id="L88">            String lbl   = edge.label().toString();</span>
+<span class="nc" id="L89">            String extra = edge.extendedLabel();</span>
+<span class="nc" id="L90">            String text  = &quot;  &quot; + edge.source().label()</span>
+                         + &quot; -&gt; &quot;
+<span class="nc bnc" id="L92" title="All 2 branches missed.">                         + (edge.target() == null ? &quot;null&quot; : edge.target().label());</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            if (!lbl.isEmpty()) {</span>
+<span class="nc" id="L94">                text += &quot; [&quot; + lbl;</span>
+<span class="nc bnc" id="L95" title="All 4 branches missed.">                if (extra != null &amp;&amp; !extra.isEmpty()) text += &quot;: &quot; + extra;</span>
+<span class="nc" id="L96">                text += &quot;]&quot;;</span>
+            }
+<span class="nc" id="L98">            System.out.println(text);</span>
+<span class="nc" id="L99">        }</span>
+<span class="nc" id="L100">        System.out.println();</span>
+<span class="nc" id="L101">    }</span>
+
+    private static void printPDG(ProgramDependenceGraph pdg) {
+<span class="nc" id="L104">        System.out.println(&quot;PDG Edges:&quot;);</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        for (PDGEdge edge : pdg.getEdges()) {</span>
+<span class="nc" id="L106">            System.out.println(&quot;  &quot; + edge);</span>
+<span class="nc" id="L107">        }</span>
+<span class="nc" id="L108">        System.out.println();</span>
+<span class="nc" id="L109">    }</span>
+
+    // writes a Graphviz DOT file for the given PDG
+    private static String toDot(ProgramDependenceGraph pdg, String name) {
+<span class="nc" id="L113">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L114">        sb.append(&quot;digraph &quot;).append(name.replaceAll(&quot;[^A-Za-z0-9_]&quot;, &quot;_&quot;)).append(&quot; {\n&quot;);</span>
+<span class="nc" id="L115">        sb.append(&quot;  rankdir=TB;\n&quot;);</span>
+
+<span class="nc" id="L117">        java.util.Map&lt;PDGNode, String&gt; ids = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L118">        int i = 0;</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">        for (PDGNode node : pdg.getNodes()) {</span>
+<span class="nc" id="L120">            String id = &quot;n&quot; + i++;</span>
+<span class="nc" id="L121">            ids.put(node, id);</span>
+<span class="nc" id="L122">            sb.append(&quot;  &quot;).append(id)</span>
+<span class="nc" id="L123">              .append(&quot; [label=\&quot;&quot;).append(node.getLabel().replace(&quot;\&quot;&quot;, &quot;\\\&quot;&quot;)).append(&quot;\&quot;];\n&quot;);</span>
+<span class="nc" id="L124">        }</span>
+
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        for (PDGEdge edge : pdg.getEdges()) {</span>
+<span class="nc" id="L127">            String from = ids.get(edge.getFrom());</span>
+<span class="nc" id="L128">            String to   = ids.get(edge.getTo());</span>
+<span class="nc bnc" id="L129" title="All 4 branches missed.">            if (from == null || to == null) continue;</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">            String lbl = edge.getType() == PDGEdge.Type.DATA</span>
+<span class="nc" id="L131">                       ? &quot;DATA(&quot; + edge.getVariable() + &quot;)&quot;</span>
+<span class="nc" id="L132">                       : &quot;CONTROL&quot;;</span>
+<span class="nc" id="L133">            sb.append(&quot;  &quot;).append(from).append(&quot; -&gt; &quot;).append(to)</span>
+<span class="nc" id="L134">              .append(&quot; [label=\&quot;&quot;).append(lbl).append(&quot;\&quot;];\n&quot;);</span>
+<span class="nc" id="L135">        }</span>
+
+<span class="nc" id="L137">        sb.append(&quot;}\n&quot;);</span>
+<span class="nc" id="L138">        return sb.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

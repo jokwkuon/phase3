@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PDGEdge.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">org.lsmr.pdg</a> &gt; <span class="el_source">PDGEdge.java</span></div><h1>PDGEdge.java</h1><pre class="source lang-java linenums">package org.lsmr.pdg;
+
+public class PDGEdge {
+
+<span class="fc" id="L5">    public enum Type {</span>
+<span class="fc" id="L6">        CONTROL,</span>
+<span class="fc" id="L7">        DATA</span>
+    }
+
+    private final PDGNode from;
+    private final PDGNode to;
+    private final Type type;
+    private final String variable;
+
+<span class="fc" id="L15">    public PDGEdge(PDGNode from, PDGNode to, Type type, String variable) {</span>
+<span class="fc" id="L16">        this.from = from;</span>
+<span class="fc" id="L17">        this.to = to;</span>
+<span class="fc" id="L18">        this.type = type;</span>
+<span class="fc" id="L19">        this.variable = variable;</span>
+<span class="fc" id="L20">    }</span>
+
+    public PDGNode getFrom() {
+<span class="fc" id="L23">        return from;</span>
+    }
+
+    public PDGNode getTo() {
+<span class="fc" id="L27">        return to;</span>
+    }
+
+    public Type getType() {
+<span class="fc" id="L31">        return type;</span>
+    }
+
+    public String getVariable() {
+<span class="fc" id="L35">        return variable;</span>
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (this == obj) return true;</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (!(obj instanceof PDGEdge)) return false;</span>
+<span class="fc" id="L42">        PDGEdge other = (PDGEdge) obj;</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        if (!from.equals(other.from)) return false;</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (!to.equals(other.to)) return false;</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (type != other.type) return false;</span>
+<span class="pc bpc" id="L46" title="3 of 4 branches missed.">        if (variable == null) return other.variable == null;</span>
+<span class="fc" id="L47">        return variable.equals(other.variable);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L52">        int result = from.hashCode();</span>
+<span class="fc" id="L53">        result = 31 * result + to.hashCode();</span>
+<span class="fc" id="L54">        result = 31 * result + type.hashCode();</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">        result = 31 * result + (variable != null ? variable.hashCode() : 0);</span>
+<span class="fc" id="L56">        return result;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (type == Type.CONTROL) {</span>
+<span class="fc" id="L62">            return &quot;CONTROL: &quot; + from + &quot; -&gt; &quot; + to;</span>
+        }
+<span class="fc" id="L64">        return &quot;DATA(&quot; + variable + &quot;): &quot; + from + &quot; -&gt; &quot; + to;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

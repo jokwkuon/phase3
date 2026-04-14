@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PDGTestUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">org.lsmr.pdg</a> &gt; <span class="el_source">PDGTestUtils.java</span></div><h1>PDGTestUtils.java</h1><pre class="source lang-java linenums">package org.lsmr.pdg;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
+import org.lsmr.cfg.ControlFlowGraph;
+
+public final class PDGTestUtils {
+
+    private PDGTestUtils() {}
+
+    public static List&lt;ControlFlowGraph&gt; buildCFGs(String relativePath) throws Exception {
+<span class="fc" id="L16">        Path input = Paths.get(System.getProperty(&quot;user.dir&quot;), relativePath);</span>
+<span class="fc" id="L17">        return Main.buildCFGs(input);</span>
+    }
+
+    public static ControlFlowGraph firstCFG(String relativePath) throws Exception {
+<span class="fc" id="L21">        List&lt;ControlFlowGraph&gt; cfgs = buildCFGs(relativePath);</span>
+<span class="pc bpc" id="L22" title="1 of 2 branches missed.">        if (cfgs.isEmpty())</span>
+<span class="nc" id="L23">            throw new IllegalStateException(&quot;No CFGs built for: &quot; + relativePath);</span>
+<span class="fc" id="L24">        return cfgs.get(0);</span>
+    }
+
+    public static ProgramDependenceGraph buildPDG(String relativePath) throws Exception {
+<span class="fc" id="L28">        return new ProgramDependenceGraphBuilder().build(firstCFG(relativePath));</span>
+    }
+
+    public static ProgramDependenceGraph buildPDGFromSource(String className, String source) throws Exception {
+<span class="nc" id="L32">        return buildPDGFromSource(className, source, null);</span>
+    }
+
+    public static ProgramDependenceGraph buildPDGFromSource(String className,
+                                                            String source,
+                                                            String cfgNameFragment) throws Exception {
+<span class="fc" id="L38">        Path tempDir = Files.createTempDirectory(&quot;pdg-test-&quot;);</span>
+<span class="fc" id="L39">        Path javaFile = tempDir.resolve(className + &quot;.java&quot;);</span>
+<span class="fc" id="L40">        Files.write(javaFile, source.getBytes(StandardCharsets.UTF_8));</span>
+<span class="fc" id="L41">        List&lt;ControlFlowGraph&gt; cfgs = Main.buildCFGs(javaFile);</span>
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">        if (cfgs.isEmpty()) {</span>
+<span class="nc" id="L43">            throw new IllegalStateException(&quot;No CFGs built for generated source: &quot; + javaFile);</span>
+        }
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        for (ControlFlowGraph cfg : cfgs) {</span>
+<span class="pc bpc" id="L46" title="1 of 4 branches missed.">            if (cfgNameFragment == null || cfg.name().contains(cfgNameFragment)) {</span>
+<span class="fc" id="L47">                return new ProgramDependenceGraphBuilder().build(cfg);</span>
+            }
+<span class="fc" id="L49">        }</span>
+<span class="nc" id="L50">        throw new IllegalStateException(&quot;No CFG matched fragment '&quot; + cfgNameFragment + &quot;' for &quot; + javaFile);</span>
+    }
+
+    public static boolean hasControlEdge(ProgramDependenceGraph pdg,
+                                         String fromFragment,
+                                         String toFragment) {
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        for (PDGEdge edge : pdg.getEdges())</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">            if (edge.getType() == PDGEdge.Type.CONTROL</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">                    &amp;&amp; edge.getFrom().getLabel().contains(fromFragment)</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">                    &amp;&amp; edge.getTo().getLabel().contains(toFragment))</span>
+<span class="fc" id="L60">                return true;</span>
+<span class="fc" id="L61">        return false;</span>
+    }
+
+    public static boolean hasDataEdge(ProgramDependenceGraph pdg,
+                                      String variable,
+                                      String fromFragment,
+                                      String toFragment) {
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        for (PDGEdge edge : pdg.getEdges())</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">            if (edge.getType() == PDGEdge.Type.DATA</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">                    &amp;&amp; variable.equals(edge.getVariable())</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">                    &amp;&amp; edge.getFrom().getLabel().contains(fromFragment)</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">                    &amp;&amp; edge.getTo().getLabel().contains(toFragment))</span>
+<span class="fc" id="L73">                return true;</span>
+<span class="fc" id="L74">        return false;</span>
+    }
+
+    public static boolean hasNoControlEdge(ProgramDependenceGraph pdg,
+                                            String fromFragment,
+                                            String toFragment) {
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        return !hasControlEdge(pdg, fromFragment, toFragment);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

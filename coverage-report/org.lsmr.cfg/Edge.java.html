@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Edge.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">org.lsmr.cfg</a> &gt; <span class="el_source">Edge.java</span></div><h1>Edge.java</h1><pre class="source lang-java linenums">package org.lsmr.cfg;
+
+/**
+ * Represents an edge in a graph. During construction of a graph, it can be that
+ * edges are not fully initialized on a first pass.
+ */
+public class Edge {
+
+	/**
+	 * The legal labels to use on edges.
+	 */
+<span class="fc" id="L12">	public static enum EdgeLabel {</span>
+		/**
+		 * Represents a default edge without no label to test for branching.
+		 */
+<span class="fc" id="L16">		BLANK,</span>
+		/**
+		 * Represents a true branch.
+		 */
+<span class="fc" id="L20">		TRUE,</span>
+		/**
+		 * Represents a false branch.
+		 */
+<span class="fc" id="L24">		FALSE,</span>
+		/**
+		 * Represents a branch taken when an exception is thrown.
+		 */
+<span class="fc" id="L28">		THROWN,</span>
+		/**
+		 * Represents a branch taken when an exception is thrown but delayed for
+		 * completion in a finally block.
+		 */
+<span class="fc" id="L33">		THROWN_DELAYED,</span>
+		/**
+		 * Represents a branch taken when an exception is definitively caught.
+		 */
+<span class="fc" id="L37">		CAUGHT,</span>
+		/**
+		 * Represents a branch taken when the corresponding extended label is matched.
+		 */
+<span class="fc" id="L41">		CASE;</span>
+
+		public String toString() {
+<span class="nc bnc" id="L44" title="All 2 branches missed.">			switch(this) {</span>
+			case BLANK:
+<span class="nc" id="L46">				return &quot;&quot;;</span>
+
+			default:
+<span class="nc" id="L49">				return super.toString();</span>
+			}
+		}
+	}
+
+	private Node source;
+	private Node target;
+	private EdgeLabel label;
+	private String extendedLabel;
+	private ControlFlowGraph graph;
+
+<span class="fc" id="L60">	Edge(Node source, Node target, EdgeLabel label, String extendedLabel) {</span>
+<span class="fc" id="L61">		this.source = source;</span>
+<span class="fc" id="L62">		this.target = target;</span>
+<span class="fc" id="L63">		this.label = label;</span>
+<span class="fc" id="L64">		this.extendedLabel = extendedLabel;</span>
+<span class="fc" id="L65">	}</span>
+
+	/**
+	 * Represents the source node for this edge.
+	 * 
+	 * @return The source node. Should not be null.
+	 */
+	public Node source() {
+<span class="fc" id="L73">		return source;</span>
+	}
+
+	/**
+	 * Represents the target node for this edge.
+	 * 
+	 * @return The target node. May be null if it has not been fully initialized.
+	 */
+	public Node target() {
+<span class="fc" id="L82">		return target;</span>
+	}
+
+	/**
+	 * Represents the kind of edge represented: BLANK if default.
+	 * 
+	 * @return The label of this edge. Should not be null.
+	 */
+	public EdgeLabel label() {
+<span class="fc" id="L91">		return label;</span>
+	}
+
+	/**
+	 * Represents the extended label for edges whose labels cannot be purely
+	 * represented via an enum constant.
+	 * 
+	 * @return The extended label of this edge. Should not be null; may be empty.
+	 */
+	public String extendedLabel() {
+<span class="nc" id="L101">		return extendedLabel;</span>
+	}
+
+	/**
+	 * Represents the graph in which this edge occurs.
+	 * 
+	 * @return The graph in which this edge occurs. Should not be null unless the
+	 *             edge is not fully initialized.
+	 */
+	public ControlFlowGraph graph() {
+<span class="nc" id="L111">		return graph;</span>
+	}
+
+	void setTarget(Node target) {
+<span class="fc" id="L115">		this.target = target;</span>
+<span class="fc" id="L116">		target.addInEdge(this);</span>
+<span class="fc" id="L117">	}</span>
+
+	void setGraph(ControlFlowGraph graph) {
+<span class="fc" id="L120">		this.graph = graph;</span>
+<span class="fc" id="L121">	}</span>
+
+	@Override
+	public int hashCode() {
+<span class="fc" id="L125">		int result = 17;</span>
+
+<span class="fc" id="L127">		result = 31 * result + source.hashCode();</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">		result = 31 * result + (target != null ? target.hashCode() : 0);</span>
+
+<span class="fc" id="L130">		return result;</span>
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">		if(obj instanceof Edge) {</span>
+<span class="fc" id="L136">			Edge other = (Edge)obj;</span>
+
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">			if(!label.equals(other.label))</span>
+<span class="fc" id="L139">				return false;</span>
+
+<span class="nc bnc" id="L141" title="All 2 branches missed.">			if(extendedLabel == null) {</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">				if(other.extendedLabel != null)</span>
+<span class="nc" id="L143">					return false;</span>
+			}
+<span class="nc bnc" id="L145" title="All 2 branches missed.">			else if(!extendedLabel.equals(other.extendedLabel))</span>
+<span class="nc" id="L146">				return false;</span>
+
+<span class="nc bnc" id="L148" title="All 2 branches missed.">			if(source.equals(other.source)) {</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">				if(target == null) {</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">					if(other.target == null)</span>
+<span class="nc" id="L151">						return true;</span>
+				}
+				else
+<span class="nc" id="L154">					return target.equals(other.target);</span>
+			}
+		}
+
+<span class="nc" id="L158">		return false;</span>
+	}
+
+	public String toString() {
+<span class="nc" id="L162">		StringBuilder sb = new StringBuilder();</span>
+
+<span class="nc" id="L164">		sb.append(&quot;edge&quot;);</span>
+
+<span class="nc" id="L166">		String ls = label.toString();</span>
+
+<span class="nc bnc" id="L168" title="All 2 branches missed.">		if(ls != &quot;&quot;) {</span>
+<span class="nc" id="L169">			sb.append(&quot; &quot;);</span>
+<span class="nc" id="L170">			sb.append(ls);</span>
+
+<span class="nc bnc" id="L172" title="All 2 branches missed.">			if(extendedLabel != null) {</span>
+<span class="nc" id="L173">				sb.append(&quot; &quot;);</span>
+<span class="nc" id="L174">				sb.append(extendedLabel);</span>
+			}
+		}
+
+<span class="nc" id="L178">		sb.append(&quot;: (&quot;);</span>
+<span class="nc" id="L179">		sb.append(source.label());</span>
+<span class="nc" id="L180">		sb.append(&quot;, &quot;);</span>
+<span class="nc bnc" id="L181" title="All 2 branches missed.">		sb.append(target == null ? &quot;null&quot; : target.label());</span>
+<span class="nc" id="L182">		sb.append(&quot;)&quot;);</span>
+
+<span class="nc" id="L184">		return sb.toString();</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

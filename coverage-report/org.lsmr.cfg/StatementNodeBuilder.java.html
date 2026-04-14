@@ -1,0 +1,1388 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StatementNodeBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">org.lsmr.cfg</a> &gt; <span class="el_source">StatementNodeBuilder.java</span></div><h1>StatementNodeBuilder.java</h1><pre class="source lang-java linenums">package org.lsmr.cfg;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
+
+import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.RuleNode;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.lsmr.cfg.Edge.EdgeLabel;
+
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ArgumentsContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ArrayCreatorRestContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ArrayInitializerContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.AssignmentOperatorContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.BasicTypeContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.BlockContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.BlockStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.BreakStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.CatchClauseContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.CatchesContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ClassBodyContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ClassBodyDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ClassCreatorRestContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ClassDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ClassOrInterfaceDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.CompilationUnitContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ConstantDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ConstantDeclaratorContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ConstantExpressionContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ConstructorBodyContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ConstructorDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ContinueStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.CreatorContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.DimsContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.DoStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ElseClauseContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.EmptyDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.EmptyStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ExplicitConstructorInvocationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.Expression1Context;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.Expression1RestContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.Expression2Context;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.Expression2RestContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.Expression3Context;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ExpressionContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ExpressionStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ExtendsInterfacesContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.FieldDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.FinallyClauseContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ForInitContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ForStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ForUpdateContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.FormalParameterContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.FormalParametersContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.IdentifierContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.IdentifierSuffixContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.IfStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ImportDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InfixOpContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InitializerContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InnerCreatorContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InterfaceBodyContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InterfaceBodyDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InterfaceDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InterfaceMemberDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InterfaceMethodDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.LabeledStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.LiteralContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.LocalVariableDeclarationStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.MemberDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.MethodDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ModifierContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ParenthesizedExpressionContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.PostfixOpContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.PrefixOpContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.PrimaryContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.QualifiedIdentifierContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.QualifiedIdentifiersContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ResultContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ReturnStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SelectorContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.StatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.StatementExpressionContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.StaticInitializerContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SuperSuffixContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SuperclassContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SuperinterfacesContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SwitchBlockStatementGroupContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SwitchLabelContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SwitchStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SynchronizedStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ThrowStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.Throws_Context;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.TryStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.TypeContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.TypeDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.TypeListContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.VariableDeclaratorContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.VariableDeclaratorIdContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.VariableDeclaratorsContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.VariableInitializerContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.WhileStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParserVisitor;
+
+/**
+ * This class will visit the nodes in a parse tree to: (1) find individual
+ * methods to process, (2) process each method to construct the CFG nodes for
+ * it, (3) determine the edge locations for each node, and (4) add the edges to
+ * each graph.
+ * &lt;p&gt;
+ * Given the root of an AST and an instance of this class, call
+ * {@code root.accept(instance}} to visit the pertinent nodes therein to
+ * construct a set of CFGs.
+ * &lt;p&gt;
+ * At the end of the complete visit, use the {@link #getCFGs() getCFGs()} method
+ * to obtain the constructed CFGs.
+ * &lt;p&gt;
+ * The resulting CFG will be based on statements, ignoring finer-grained
+ * considerations.
+ */
+<span class="fc" id="L127">public class StatementNodeBuilder implements Java1_2ANTLRParserVisitor&lt;WorkingGraph&gt; {</span>
+<span class="fc" id="L128">	private Map&lt;RuleContext, ControlFlowGraph&gt; graphMap = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L129">	private Stack&lt;String&gt; nameStack = new Stack&lt;&gt;();</span>
+<span class="fc" id="L130">	private int nodeCounter = 0;</span>
+
+	private String getCurrentName() {
+<span class="fc" id="L133">		StringBuilder sb = new StringBuilder();</span>
+
+<span class="fc bfc" id="L135" title="All 2 branches covered.">		for(String name : nameStack) {</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">			if(sb.length() == 0)</span>
+<span class="fc" id="L137">				sb.append(name);</span>
+			else {
+<span class="nc" id="L139">				sb.append('.');</span>
+<span class="nc" id="L140">				sb.append(name);</span>
+			}
+<span class="fc" id="L142">		}</span>
+
+<span class="fc" id="L144">		return sb.toString();</span>
+	}
+
+	/**
+	 * Obtains a list of the CFGs that have been constructed from the visit. It
+	 * makes most sense to call this method once the visit has been completed.
+	 * 
+	 * @return An unmodifiable list of the constructed CFGs for the visited AST.
+	 */
+	public List&lt;ControlFlowGraph&gt; getCFGs() {
+<span class="fc" id="L154">		return Collections.unmodifiableList(new ArrayList&lt;&gt;(graphMap.values()));</span>
+	}
+
+	@Override
+	public WorkingGraph visit(ParseTree arg0) {
+<span class="fc" id="L159">		return arg0.accept(this);</span>
+	}
+
+	@Override
+	public WorkingGraph visitChildren(RuleNode arg0) {
+<span class="fc" id="L164">		int childCount = arg0.getChildCount();</span>
+<span class="fc" id="L165">		WorkingGraph previousResult = null, currentResult = null;</span>
+
+<span class="fc bfc" id="L167" title="All 2 branches covered.">		for(int i = 0; i &lt; childCount; i++) {</span>
+<span class="fc" id="L168">			currentResult = visit(arg0.getChild(i));</span>
+
+<span class="fc bfc" id="L170" title="All 2 branches covered.">			if(currentResult != null)</span>
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">				if(previousResult != null)</span>
+<span class="nc" id="L172">					previousResult.connect(currentResult);</span>
+				else
+<span class="fc" id="L174">					previousResult = currentResult;</span>
+		}
+
+<span class="fc" id="L177">		return previousResult;</span>
+	}
+
+	@Override
+	public WorkingGraph visitErrorNode(ErrorNode arg0) {
+		// Ignore
+<span class="nc" id="L183">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitTerminal(TerminalNode arg0) {
+		// Ignore
+<span class="fc" id="L189">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitIdentifier(IdentifierContext ctx) {
+		// Ignore
+<span class="nc" id="L195">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitQualifiedIdentifier(QualifiedIdentifierContext ctx) {
+		// Ignore
+<span class="nc" id="L201">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitLiteral(LiteralContext ctx) {
+		// Ignore
+<span class="nc" id="L207">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitType(TypeContext ctx) {
+		// Ignore
+<span class="nc" id="L213">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitBasicType(BasicTypeContext ctx) {
+		// Ignore
+<span class="nc" id="L219">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitExpression(ExpressionContext ctx) {
+		// Ignore
+<span class="nc" id="L225">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitAssignmentOperator(AssignmentOperatorContext ctx) {
+		// Ignore
+<span class="nc" id="L231">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitExpression1(Expression1Context ctx) {
+		// Ignore
+<span class="nc" id="L237">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitExpression1Rest(Expression1RestContext ctx) {
+		// Ignore
+<span class="nc" id="L243">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitExpression2(Expression2Context ctx) {
+		// Ignore
+<span class="nc" id="L249">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitExpression2Rest(Expression2RestContext ctx) {
+		// Ignore
+<span class="nc" id="L255">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitInfixOp(InfixOpContext ctx) {
+		// Ignore
+<span class="nc" id="L261">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitExpression3(Expression3Context ctx) {
+		// Ignore
+<span class="nc" id="L267">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitPrefixOp(PrefixOpContext ctx) {
+		// Ignore
+<span class="nc" id="L273">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitPostfixOp(PostfixOpContext ctx) {
+		// Ignore
+<span class="nc" id="L279">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitPrimary(PrimaryContext ctx) {
+		// Ignore
+<span class="nc" id="L285">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitIdentifierSuffix(IdentifierSuffixContext ctx) {
+		// Ignore
+<span class="nc" id="L291">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitSelector(SelectorContext ctx) {
+		// Ignore
+<span class="nc" id="L297">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitSuperSuffix(SuperSuffixContext ctx) {
+		// Ignore
+<span class="nc" id="L303">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitArguments(ArgumentsContext ctx) {
+		// Ignore
+<span class="nc" id="L309">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitCreator(CreatorContext ctx) {
+		// Ignore
+<span class="nc" id="L315">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitInnerCreator(InnerCreatorContext ctx) {
+		// Ignore
+<span class="nc" id="L321">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitArrayCreatorRest(ArrayCreatorRestContext ctx) {
+		// Ignore
+<span class="nc" id="L327">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitClassCreatorRest(ClassCreatorRestContext ctx) {
+		// Ignore
+<span class="nc" id="L333">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitArrayInitializer(ArrayInitializerContext ctx) {
+		// Ignore
+<span class="nc" id="L339">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitVariableInitializer(VariableInitializerContext ctx) {
+		// Ignore
+<span class="nc" id="L345">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitBlock(BlockContext ctx) {
+<span class="fc" id="L350">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="fc" id="L351">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="fc" id="L353">		s.node = g.buildNode(nodeCounter++ + &quot;: block&quot;);</span>
+<span class="fc" id="L354">		s.edges.add(g.buildEdge(s.node, null, EdgeLabel.BLANK));</span>
+
+<span class="fc" id="L356">		List&lt;BlockStatementContext&gt; statements = ctx.blockStatement();</span>
+
+<span class="fc bfc" id="L358" title="All 2 branches covered.">		for(int i = 0, size = statements.size(); i &lt; size; i++)</span>
+<span class="fc" id="L359">			s.connect(visitBlockStatement(statements.get(i)));</span>
+
+<span class="fc" id="L361">		return s;</span>
+	}
+
+	@SuppressWarnings(&quot;javadoc&quot;)
+	public WorkingGraph visitTryBlock(BlockContext ctx) {
+<span class="fc" id="L366">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="fc" id="L367">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="fc" id="L369">		s.node = g.buildNode(nodeCounter++ + &quot;: block&quot;);</span>
+<span class="fc" id="L370">		s.edges.add(g.buildEdge(s.node, null, EdgeLabel.BLANK));</span>
+
+<span class="fc" id="L372">		List&lt;BlockStatementContext&gt; statements = ctx.blockStatement();</span>
+
+<span class="fc bfc" id="L374" title="All 2 branches covered.">		for(int i = 0, size = statements.size(); i &lt; size; i++) {</span>
+<span class="fc" id="L375">			WorkingGraph bs = visitBlockStatement(statements.get(i));</span>
+
+<span class="fc" id="L377">			bs.edges.add(g.buildEdge(bs.node, null, EdgeLabel.THROWN));</span>
+<span class="fc" id="L378">			s.connect(bs);</span>
+		}
+
+<span class="fc" id="L381">		return s;</span>
+	}
+
+	@SuppressWarnings(&quot;javadoc&quot;)
+	public WorkingGraph visitFinallyBlock(BlockContext ctx, boolean delayedThrown) {
+<span class="nc" id="L386">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="nc" id="L387">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="nc" id="L389">		s.node = g.buildNode(nodeCounter++ + &quot;: block&quot;);</span>
+<span class="nc" id="L390">		s.edges.add(g.buildEdge(s.node, null, EdgeLabel.BLANK));</span>
+
+<span class="nc bnc" id="L392" title="All 2 branches missed.">		if(delayedThrown)</span>
+<span class="nc" id="L393">			s.edges.add(g.buildEdge(s.node, null, EdgeLabel.THROWN_DELAYED));</span>
+
+<span class="nc" id="L395">		List&lt;BlockStatementContext&gt; statements = ctx.blockStatement();</span>
+
+<span class="nc bnc" id="L397" title="All 2 branches missed.">		for(int i = 0, size = statements.size(); i &lt; size; i++) {</span>
+<span class="nc" id="L398">			WorkingGraph bs = visitBlockStatement(statements.get(i));</span>
+
+<span class="nc bnc" id="L400" title="All 2 branches missed.">			if(delayedThrown)</span>
+<span class="nc bnc" id="L401" title="All 2 branches missed.">				if(i == size - 1)</span>
+<span class="nc" id="L402">					bs.edges.add(g.buildEdge(bs.node, null, EdgeLabel.THROWN));</span>
+				else
+<span class="nc" id="L404">					bs.edges.add(g.buildEdge(bs.node, null, EdgeLabel.THROWN_DELAYED));</span>
+
+<span class="nc" id="L406">			s.connect(bs);</span>
+		}
+
+<span class="nc" id="L409">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitBlockStatement(BlockStatementContext ctx) {
+<span class="fc" id="L414">		return visitChildren(ctx);</span>
+	}
+
+	ControlFlowGraph getGraph(RuleContext ctx) {
+<span class="fc" id="L418">		RuleContext current = ctx;</span>
+
+<span class="pc bpc" id="L420" title="3 of 8 branches missed.">		while(current != null &amp;&amp; !(current instanceof MemberDeclarationContext)</span>
+			&amp;&amp; !(current instanceof ClassBodyDeclarationContext) &amp;&amp; !(current instanceof InterfaceBodyContext))
+<span class="fc" id="L422">			current = current.getParent();</span>
+
+<span class="pc bpc" id="L424" title="1 of 2 branches missed.">		if(current != null)</span>
+<span class="fc" id="L425">			return graphMap.get(current);</span>
+
+<span class="nc" id="L427">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitLocalVariableDeclarationStatement(LocalVariableDeclarationStatementContext ctx) {
+<span class="fc" id="L432">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="fc" id="L433">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="fc" id="L435">		s.node = g.buildNode(nodeCounter++ + &quot;: &quot; + ctx.accept(new TreePrinter()));</span>
+<span class="fc" id="L436">		s.edges.add(g.buildEdge(s.node, null, EdgeLabel.BLANK));</span>
+
+<span class="fc" id="L438">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitBreakStatement(BreakStatementContext ctx) {
+<span class="fc" id="L443">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="fc" id="L444">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="fc" id="L446">		s.node = g.buildNode(nodeCounter++ + &quot;: &quot; + ctx.accept(new TreePrinter()));</span>
+
+<span class="fc" id="L448">		IdentifierContext ic = ctx.identifier();</span>
+<span class="fc" id="L449">		String label = &quot;&quot;;</span>
+
+<span class="pc bpc" id="L451" title="1 of 2 branches missed.">		if(ic != null)</span>
+<span class="nc" id="L452">			label = ic.getText().intern();</span>
+
+<span class="fc" id="L454">		List&lt;Edge&gt; list = s.breakEdges.get(label);</span>
+
+<span class="pc bpc" id="L456" title="1 of 2 branches missed.">		if(list == null) {</span>
+<span class="fc" id="L457">			list = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L458">			s.breakEdges.put(label, list);</span>
+		}
+
+<span class="fc" id="L461">		list.add(g.buildEdge(s.node, null, EdgeLabel.BLANK));</span>
+
+<span class="fc" id="L463">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitContinueStatement(ContinueStatementContext ctx) {
+<span class="nc" id="L468">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="nc" id="L469">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="nc" id="L471">		s.node = g.buildNode(nodeCounter++ + &quot;: &quot; + ctx.accept(new TreePrinter()));</span>
+
+<span class="nc" id="L473">		IdentifierContext ic = ctx.identifier();</span>
+<span class="nc" id="L474">		String label = &quot;&quot;;</span>
+
+<span class="nc bnc" id="L476" title="All 2 branches missed.">		if(ic != null)</span>
+<span class="nc" id="L477">			label = ic.getText();</span>
+
+<span class="nc" id="L479">		List&lt;Edge&gt; list = s.continueEdges.get(label);</span>
+
+<span class="nc bnc" id="L481" title="All 2 branches missed.">		if(list == null) {</span>
+<span class="nc" id="L482">			list = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L483">			s.continueEdges.put(label, list);</span>
+		}
+
+<span class="nc" id="L486">		list.add(g.buildEdge(s.node, null, EdgeLabel.BLANK));</span>
+
+<span class="nc" id="L488">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitDoStatement(DoStatementContext ctx) {
+<span class="fc" id="L493">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="fc" id="L494">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="fc" id="L496">		s.node = g.buildNode(nodeCounter++ + &quot;: do&quot;);</span>
+
+<span class="fc" id="L498">		WorkingGraph doBody = visitStatement(ctx.statement());</span>
+
+<span class="fc" id="L500">		g.buildEdge(s.node, doBody.node, EdgeLabel.BLANK);</span>
+
+<span class="fc" id="L502">		Node whileExpression = g</span>
+<span class="fc" id="L503">			.buildNode(nodeCounter++ + &quot;: while &quot; + ctx.parenthesizedExpression().accept(new TreePrinter()) + &quot;; &quot;);</span>
+
+<span class="fc" id="L505">		g.buildEdge(whileExpression, s.node, EdgeLabel.TRUE);</span>
+
+<span class="fc bfc" id="L507" title="All 2 branches covered.">		for(Edge edge : doBody.edges) {</span>
+<span class="fc bfc" id="L508" title="All 2 branches covered.">			if(edge.target() == null)</span>
+<span class="pc bpc" id="L509" title="1 of 2 branches missed.">				if(edge.label() == EdgeLabel.THROWN)</span>
+<span class="nc" id="L510">					s.edges.add(edge);</span>
+				else
+<span class="fc" id="L512">					edge.setTarget(whileExpression);</span>
+<span class="fc" id="L513">		}</span>
+
+		// Labelled edges will be handled by labelled statement
+
+<span class="fc" id="L517">		List&lt;Edge&gt; nonLabelledBreakEdges = doBody.breakEdges.get(&quot;&quot;);</span>
+
+<span class="pc bpc" id="L519" title="1 of 2 branches missed.">		if(nonLabelledBreakEdges != null) {</span>
+<span class="nc" id="L520">			s.edges.addAll(nonLabelledBreakEdges);</span>
+<span class="nc" id="L521">			s.breakEdges.remove(&quot;&quot;);</span>
+		}
+
+<span class="fc" id="L524">		List&lt;Edge&gt; nonLabelledContinueEdges = doBody.continueEdges.get(&quot;&quot;);</span>
+
+<span class="pc bpc" id="L526" title="1 of 2 branches missed.">		if(nonLabelledContinueEdges != null) {</span>
+<span class="nc bnc" id="L527" title="All 2 branches missed.">			for(Edge edge : nonLabelledContinueEdges) {</span>
+<span class="nc" id="L528">				edge.setTarget(s.node);</span>
+<span class="nc" id="L529">				s.edges.add(edge);</span>
+<span class="nc" id="L530">			}</span>
+
+<span class="nc" id="L532">			s.continueEdges.remove(&quot;&quot;);</span>
+		}
+
+<span class="fc" id="L535">		s.edges.add(g.buildEdge(whileExpression, null, EdgeLabel.FALSE));</span>
+		// s.connect(doBody);
+
+		// Copy labelled break and continue edges
+
+<span class="pc bpc" id="L540" title="1 of 2 branches missed.">		for(String breakLabel : doBody.breakEdges.keySet()) {</span>
+<span class="nc bnc" id="L541" title="All 2 branches missed.">			if(s.breakEdges.containsKey(breakLabel)) {</span>
+<span class="nc" id="L542">				List&lt;Edge&gt; edgeList = s.breakEdges.get(breakLabel);</span>
+
+<span class="nc" id="L544">				edgeList.addAll(doBody.breakEdges.get(breakLabel));</span>
+<span class="nc" id="L545">			}</span>
+			else
+<span class="nc" id="L547">				s.breakEdges.put(breakLabel, doBody.breakEdges.get(breakLabel));</span>
+<span class="nc" id="L548">		}</span>
+
+<span class="pc bpc" id="L550" title="1 of 2 branches missed.">		for(String continueLabel : doBody.continueEdges.keySet()) {</span>
+<span class="nc bnc" id="L551" title="All 2 branches missed.">			if(s.continueEdges.containsKey(continueLabel)) {</span>
+<span class="nc" id="L552">				List&lt;Edge&gt; edgeList = s.continueEdges.get(continueLabel);</span>
+
+<span class="nc" id="L554">				edgeList.addAll(doBody.continueEdges.get(continueLabel));</span>
+<span class="nc" id="L555">			}</span>
+			else
+<span class="nc" id="L557">				s.continueEdges.put(continueLabel, doBody.continueEdges.get(continueLabel));</span>
+<span class="nc" id="L558">		}</span>
+
+<span class="fc" id="L560">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitIfStatement(IfStatementContext ctx) {
+<span class="fc" id="L565">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="fc" id="L566">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="fc" id="L568">		s.node = g.buildNode(nodeCounter++ + &quot;: if &quot; + ctx.parenthesizedExpression().accept(new TreePrinter()));</span>
+
+<span class="fc" id="L570">		WorkingGraph trueNode = visitStatement(ctx.statement());</span>
+
+<span class="fc" id="L572">		s.edges.add(g.buildEdge(s.node, trueNode.node, EdgeLabel.TRUE));</span>
+<span class="fc" id="L573">		s.edges = trueNode.edges;</span>
+
+<span class="fc" id="L575">		ElseClauseContext elseClause = ctx.elseClause();</span>
+
+<span class="fc bfc" id="L577" title="All 2 branches covered.">		if(elseClause != null) {</span>
+<span class="fc" id="L578">			WorkingGraph elseNode = visitElseClause(elseClause);</span>
+
+<span class="fc" id="L580">			s.edges.add(g.buildEdge(s.node, elseNode.node, EdgeLabel.FALSE));</span>
+<span class="fc" id="L581">			s.edges.addAll(elseNode.edges);</span>
+<span class="fc" id="L582">			s.breakEdges.putAll(elseNode.breakEdges);</span>
+<span class="fc" id="L583">			s.continueEdges.putAll(elseNode.continueEdges);</span>
+<span class="fc" id="L584">		}</span>
+		else
+<span class="fc" id="L586">			s.edges.add(g.buildEdge(s.node, null, EdgeLabel.FALSE));</span>
+
+<span class="fc" id="L588">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitLabeledStatement(LabeledStatementContext ctx) {
+<span class="nc" id="L593">		String label = ctx.identifier().getText();</span>
+<span class="nc" id="L594">		StatementContext sc = ctx.statement();</span>
+<span class="nc" id="L595">		WorkingGraph s = visitStatement(sc);</span>
+<span class="nc" id="L596">		List&lt;Edge&gt; breakEdges = s.breakEdges.get(label);</span>
+
+<span class="nc bnc" id="L598" title="All 2 branches missed.">		if(breakEdges != null) {</span>
+<span class="nc" id="L599">			s.breakEdges.remove(label);</span>
+<span class="nc" id="L600">			s.edges.addAll(breakEdges);</span>
+		}
+
+<span class="nc" id="L603">		List&lt;Edge&gt; continueEdges = s.continueEdges.get(label);</span>
+
+<span class="nc bnc" id="L605" title="All 2 branches missed.">		if(continueEdges != null) {</span>
+<span class="nc" id="L606">			s.continueEdges.remove(label);</span>
+
+<span class="nc bnc" id="L608" title="All 6 branches missed.">			if(sc.forStatement() != null || sc.whileStatement() != null || sc.doStatement() != null)</span>
+<span class="nc bnc" id="L609" title="All 2 branches missed.">				for(Edge continueEdge : continueEdges)</span>
+<span class="nc" id="L610">					continueEdge.setTarget(s.node);</span>
+		}
+
+<span class="nc" id="L613">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitTryStatement(TryStatementContext ctx) {
+<span class="fc" id="L618">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="fc" id="L619">		BlockContext tryBlock = ctx.block();</span>
+<span class="fc" id="L620">		CatchesContext catches = ctx.catches();</span>
+<span class="pc bpc" id="L621" title="1 of 2 branches missed.">		List&lt;CatchClauseContext&gt; catchClauses = catches == null ? new ArrayList&lt;&gt;() : catches.catchClause();</span>
+<span class="fc" id="L622">		FinallyClauseContext finallyClause = ctx.finallyClause();</span>
+
+<span class="fc" id="L624">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="fc" id="L626">		s.node = g.buildNode(nodeCounter++ + &quot;: try&quot;);</span>
+<span class="fc" id="L627">		s.edges.add(g.buildEdge(s.node, null, EdgeLabel.BLANK));</span>
+
+<span class="fc" id="L629">		WorkingGraph tryBody = visitTryBlock(tryBlock);</span>
+
+<span class="fc" id="L631">		s.connect(tryBody);</span>
+
+<span class="fc bfc" id="L633" title="All 2 branches covered.">		for(CatchClauseContext catch_ : catchClauses) {</span>
+<span class="fc" id="L634">			WorkingGraph catchClause = visitCatchClause(catch_);</span>
+
+<span class="fc bfc" id="L636" title="All 2 branches covered.">			for(Edge edge : s.edges) {</span>
+<span class="pc bpc" id="L637" title="1 of 4 branches missed.">				if(edge.label() == EdgeLabel.THROWN &amp;&amp; edge.target() == null)</span>
+<span class="fc" id="L638">					edge.setTarget(catchClause.node);</span>
+<span class="fc" id="L639">			}</span>
+
+<span class="fc" id="L641">			s.edges.addAll(catchClause.edges);</span>
+<span class="fc" id="L642">		}</span>
+
+<span class="pc bpc" id="L644" title="1 of 2 branches missed.">		if(finallyClause != null) {</span>
+<span class="nc" id="L645">			boolean delayedThrown = false;</span>
+
+<span class="nc bnc" id="L647" title="All 2 branches missed.">			for(Edge edge : s.edges)</span>
+<span class="nc bnc" id="L648" title="All 4 branches missed.">				if(edge.label() == EdgeLabel.THROWN &amp;&amp; edge.target() == null) {</span>
+<span class="nc" id="L649">					delayedThrown = true;</span>
+<span class="nc" id="L650">					break;</span>
+				}
+
+<span class="nc" id="L653">			WorkingGraph finallyBody = visitFinallyClause(finallyClause, delayedThrown);</span>
+
+<span class="nc bnc" id="L655" title="All 2 branches missed.">			for(Edge edge : s.edges)</span>
+<span class="nc bnc" id="L656" title="All 2 branches missed.">				if(edge.target() == null)</span>
+<span class="nc" id="L657">					edge.setTarget(finallyBody.node);</span>
+
+<span class="nc" id="L659">			s.edges.addAll(finallyBody.edges);</span>
+		}
+
+<span class="fc" id="L662">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitForStatement(ForStatementContext ctx) {
+<span class="fc" id="L667">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="fc" id="L668">		WorkingGraph s = new WorkingGraph();</span>
+<span class="fc" id="L669">		ForInitContext forInit = ctx.forInit();</span>
+<span class="fc" id="L670">		ExpressionContext expression = ctx.expression();</span>
+<span class="fc" id="L671">		ForUpdateContext forUpdate = ctx.forUpdate();</span>
+<span class="fc" id="L672">		StringBuilder sb = new StringBuilder();</span>
+
+<span class="fc" id="L674">		sb.append(nodeCounter++);</span>
+<span class="fc" id="L675">		sb.append(&quot;: for ( &quot;);</span>
+<span class="pc bpc" id="L676" title="1 of 2 branches missed.">		sb.append(forInit == null ? &quot;; &quot; : forInit.accept(new TreePrinter()) + &quot;; &quot;);</span>
+<span class="pc bpc" id="L677" title="1 of 2 branches missed.">		sb.append(expression == null ? &quot;; &quot; : expression.accept(new TreePrinter()) + &quot;; &quot;);</span>
+
+<span class="pc bpc" id="L679" title="1 of 2 branches missed.">		if(forUpdate != null)</span>
+<span class="fc" id="L680">			sb.append(forUpdate.accept(new TreePrinter()));</span>
+
+<span class="fc" id="L682">		sb.append(&quot;)&quot;);</span>
+<span class="fc" id="L683">		s.node = g.buildNode(sb.toString());</span>
+
+<span class="fc" id="L685">		WorkingGraph forBody = visitStatement(ctx.statement());</span>
+
+<span class="fc" id="L687">		s.connect(forBody);</span>
+<span class="fc" id="L688">		s.edges.add(g.buildEdge(s.node, forBody.node, EdgeLabel.TRUE));</span>
+<span class="fc" id="L689">		s.edges.add(g.buildEdge(s.node, null, EdgeLabel.FALSE));</span>
+
+<span class="fc bfc" id="L691" title="All 2 branches covered.">		for(Edge edge : forBody.edges) {</span>
+<span class="pc bpc" id="L692" title="1 of 4 branches missed.">			if(edge.target() == null &amp;&amp; edge.label() != EdgeLabel.THROWN)</span>
+<span class="fc" id="L693">				edge.setTarget(s.node);</span>
+<span class="fc" id="L694">		}</span>
+		// s.edges.addAll(forBody.edges);
+
+		// Labelled edges will be handled by labelled statement
+
+<span class="fc" id="L699">		List&lt;Edge&gt; nonLabelledBreakEdges = forBody.breakEdges.get(&quot;&quot;);</span>
+
+<span class="pc bpc" id="L701" title="1 of 2 branches missed.">		if(nonLabelledBreakEdges != null) {</span>
+<span class="nc" id="L702">			s.edges.addAll(nonLabelledBreakEdges);</span>
+<span class="nc" id="L703">			s.breakEdges.remove(&quot;&quot;);</span>
+		}
+
+<span class="fc" id="L706">		List&lt;Edge&gt; nonLabelledContinueEdges = forBody.continueEdges.get(&quot;&quot;);</span>
+
+<span class="pc bpc" id="L708" title="1 of 2 branches missed.">		if(nonLabelledContinueEdges != null) {</span>
+<span class="nc bnc" id="L709" title="All 2 branches missed.">			for(Edge edge : nonLabelledContinueEdges) {</span>
+<span class="nc" id="L710">				edge.setTarget(s.node);</span>
+<span class="nc" id="L711">				s.edges.add(edge);</span>
+<span class="nc" id="L712">			}</span>
+
+<span class="nc" id="L714">			s.continueEdges.remove(&quot;&quot;);</span>
+		}
+
+		// Copy labelled break and continue edges
+
+<span class="pc bpc" id="L719" title="1 of 2 branches missed.">		for(String breakLabel : forBody.breakEdges.keySet()) {</span>
+<span class="nc bnc" id="L720" title="All 2 branches missed.">			if(s.breakEdges.containsKey(breakLabel)) {</span>
+<span class="nc" id="L721">				List&lt;Edge&gt; edgeList = s.breakEdges.get(breakLabel);</span>
+
+<span class="nc" id="L723">				edgeList.addAll(forBody.breakEdges.get(breakLabel));</span>
+<span class="nc" id="L724">			}</span>
+			else
+<span class="nc" id="L726">				s.breakEdges.put(breakLabel, forBody.breakEdges.get(breakLabel));</span>
+<span class="nc" id="L727">		}</span>
+
+<span class="pc bpc" id="L729" title="1 of 2 branches missed.">		for(String continueLabel : forBody.continueEdges.keySet()) {</span>
+<span class="nc bnc" id="L730" title="All 2 branches missed.">			if(s.continueEdges.containsKey(continueLabel)) {</span>
+<span class="nc" id="L731">				List&lt;Edge&gt; edgeList = s.continueEdges.get(continueLabel);</span>
+
+<span class="nc" id="L733">				edgeList.addAll(forBody.continueEdges.get(continueLabel));</span>
+<span class="nc" id="L734">			}</span>
+			else
+<span class="nc" id="L736">				s.continueEdges.put(continueLabel, forBody.continueEdges.get(continueLabel));</span>
+<span class="nc" id="L737">		}</span>
+
+<span class="fc" id="L739">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitWhileStatement(WhileStatementContext ctx) {
+<span class="fc" id="L744">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="fc" id="L745">		WorkingGraph s = new WorkingGraph();</span>
+<span class="fc" id="L746">		ParenthesizedExpressionContext condition = ctx.parenthesizedExpression();</span>
+
+<span class="fc" id="L748">		s.node = g.buildNode(nodeCounter++ + &quot;: while &quot; + condition.accept(new TreePrinter()));</span>
+
+<span class="fc" id="L750">		WorkingGraph whileBody = visitStatement(ctx.statement());</span>
+
+<span class="fc" id="L752">		s.connect(whileBody);</span>
+<span class="fc" id="L753">		g.buildEdge(s.node, whileBody.node, EdgeLabel.TRUE);</span>
+<span class="fc" id="L754">		s.edges.add(g.buildEdge(s.node, null, EdgeLabel.FALSE));</span>
+
+<span class="fc bfc" id="L756" title="All 2 branches covered.">		for(Edge edge : whileBody.edges) {</span>
+<span class="fc bfc" id="L757" title="All 2 branches covered.">			if(edge.target() == null)</span>
+<span class="pc bpc" id="L758" title="1 of 2 branches missed.">				if(edge.label() == EdgeLabel.THROWN)</span>
+<span class="nc" id="L759">					s.edges.add(edge);</span>
+				else
+<span class="fc" id="L761">					edge.setTarget(s.node);</span>
+<span class="fc" id="L762">		}</span>
+
+		// Labelled edges will be handled by labelled statement
+
+<span class="fc" id="L766">		List&lt;Edge&gt; nonLabelledBreakEdges = whileBody.breakEdges.get(&quot;&quot;);</span>
+
+<span class="pc bpc" id="L768" title="1 of 2 branches missed.">		if(nonLabelledBreakEdges != null) {</span>
+<span class="nc" id="L769">			s.edges.addAll(nonLabelledBreakEdges);</span>
+<span class="nc" id="L770">			s.breakEdges.remove(&quot;&quot;);</span>
+		}
+
+<span class="fc" id="L773">		List&lt;Edge&gt; nonLabelledContinueEdges = whileBody.continueEdges.get(&quot;&quot;);</span>
+
+<span class="pc bpc" id="L775" title="1 of 2 branches missed.">		if(nonLabelledContinueEdges != null) {</span>
+<span class="nc bnc" id="L776" title="All 2 branches missed.">			for(Edge edge : nonLabelledContinueEdges) {</span>
+<span class="nc" id="L777">				edge.setTarget(s.node);</span>
+<span class="nc" id="L778">				s.edges.add(edge);</span>
+<span class="nc" id="L779">			}</span>
+
+<span class="nc" id="L781">			s.continueEdges.remove(&quot;&quot;);</span>
+		}
+
+		// Copy labelled break and continue edges
+
+<span class="pc bpc" id="L786" title="1 of 2 branches missed.">		for(String breakLabel : whileBody.breakEdges.keySet()) {</span>
+<span class="nc bnc" id="L787" title="All 2 branches missed.">			if(s.breakEdges.containsKey(breakLabel)) {</span>
+<span class="nc" id="L788">				List&lt;Edge&gt; edgeList = s.breakEdges.get(breakLabel);</span>
+
+<span class="nc" id="L790">				edgeList.addAll(whileBody.breakEdges.get(breakLabel));</span>
+<span class="nc" id="L791">			}</span>
+			else
+<span class="nc" id="L793">				s.breakEdges.put(breakLabel, whileBody.breakEdges.get(breakLabel));</span>
+<span class="nc" id="L794">		}</span>
+
+<span class="pc bpc" id="L796" title="1 of 2 branches missed.">		for(String continueLabel : whileBody.continueEdges.keySet()) {</span>
+<span class="nc bnc" id="L797" title="All 2 branches missed.">			if(s.continueEdges.containsKey(continueLabel)) {</span>
+<span class="nc" id="L798">				List&lt;Edge&gt; edgeList = s.continueEdges.get(continueLabel);</span>
+
+<span class="nc" id="L800">				edgeList.addAll(whileBody.continueEdges.get(continueLabel));</span>
+<span class="nc" id="L801">			}</span>
+			else
+<span class="nc" id="L803">				s.continueEdges.put(continueLabel, whileBody.continueEdges.get(continueLabel));</span>
+<span class="nc" id="L804">		}</span>
+
+<span class="fc" id="L806">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitSwitchStatement(SwitchStatementContext ctx) {
+<span class="fc" id="L811">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="fc" id="L812">		WorkingGraph s = new WorkingGraph();</span>
+<span class="fc" id="L813">		List&lt;SwitchBlockStatementGroupContext&gt; statementGroups = ctx.switchBlockStatementGroup();</span>
+
+<span class="fc" id="L815">		s.node = g.buildNode(nodeCounter++ + &quot;: switch &quot; + ctx.parenthesizedExpression().accept(new TreePrinter()));</span>
+
+<span class="pc bpc" id="L817" title="1 of 2 branches missed.">		if(!statementGroups.isEmpty())</span>
+<span class="fc bfc" id="L818" title="All 2 branches covered.">			for(SwitchBlockStatementGroupContext group : statementGroups) {</span>
+<span class="fc" id="L819">				List&lt;SwitchLabelContext&gt; labels = group.switchLabel();</span>
+<span class="fc" id="L820">				List&lt;BlockStatementContext&gt; statements = group.blockStatement();</span>
+
+<span class="fc" id="L822">				WorkingGraph first = visitBlockStatement(statements.get(0));</span>
+<span class="fc" id="L823">				TreePrinter printer = new TreePrinter();</span>
+
+<span class="fc bfc" id="L825" title="All 2 branches covered.">				for(SwitchLabelContext label : labels)</span>
+<span class="fc" id="L826">					s.edges.add(g.buildEdge(s.node, first.node, EdgeLabel.CASE, label.accept(printer)));</span>
+
+<span class="fc bfc" id="L828" title="All 2 branches covered.">				for(int i = 1, size = statements.size(); i &lt; size; i++) {</span>
+<span class="fc" id="L829">					WorkingGraph later = visitBlockStatement(statements.get(i));</span>
+
+<span class="fc" id="L831">					first.connect(later);</span>
+				}
+
+<span class="fc" id="L834">				s.connect(first);</span>
+<span class="fc" id="L835">			}</span>
+		else
+<span class="nc" id="L837">			s.edges.add(g.buildEdge(s.node, null, EdgeLabel.BLANK));</span>
+
+<span class="pc bpc" id="L839" title="1 of 2 branches missed.">		if(s.breakEdges.containsKey(&quot;&quot;)) {</span>
+<span class="fc" id="L840">			List&lt;Edge&gt; breakEdges = s.breakEdges.get(&quot;&quot;);</span>
+
+<span class="fc" id="L842">			s.edges.addAll(breakEdges);</span>
+<span class="fc" id="L843">			s.breakEdges.remove(&quot;&quot;);</span>
+		}
+
+<span class="fc" id="L846">		List&lt;SwitchLabelContext&gt; extraLabels = ctx.switchLabel();</span>
+
+<span class="pc bpc" id="L848" title="1 of 2 branches missed.">		for(SwitchLabelContext label : extraLabels)</span>
+<span class="nc" id="L849">			s.edges.add(g.buildEdge(s.node, null, EdgeLabel.CASE, label.accept(new TreePrinter())));</span>
+
+<span class="fc" id="L851">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitSynchronizedStatement(SynchronizedStatementContext ctx) {
+<span class="nc" id="L856">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="nc" id="L857">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="nc" id="L859">		s.node = g</span>
+<span class="nc" id="L860">			.buildNode(nodeCounter++ + &quot;: synchronized &quot; + ctx.parenthesizedExpression().accept(new TreePrinter()));</span>
+<span class="nc" id="L861">		s.edges.add(g.buildEdge(s.node, null, EdgeLabel.BLANK));</span>
+
+<span class="nc" id="L863">		WorkingGraph block = visitBlock(ctx.block());</span>
+
+<span class="nc" id="L865">		s.connect(block);</span>
+
+<span class="nc" id="L867">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitReturnStatement(ReturnStatementContext ctx) {
+<span class="fc" id="L872">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="fc" id="L873">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="fc" id="L875">		s.node = g.buildNode(nodeCounter++ + &quot;: &quot; + ctx.accept(new TreePrinter()));</span>
+<span class="fc" id="L876">		s.edges.add(g.buildEdge(s.node, null, EdgeLabel.BLANK));</span>
+
+<span class="fc" id="L878">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitThrowStatement(ThrowStatementContext ctx) {
+<span class="nc" id="L883">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="nc" id="L884">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="nc" id="L886">		s.node = g.buildNode(nodeCounter++ + &quot;: &quot; + ctx.accept(new TreePrinter()));</span>
+<span class="nc" id="L887">		s.edges.add(g.buildEdge(s.node, null, EdgeLabel.THROWN));</span>
+
+<span class="nc" id="L889">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitEmptyStatement(EmptyStatementContext ctx) {
+<span class="nc" id="L894">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="nc" id="L895">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="nc" id="L897">		s.node = g.buildNode(nodeCounter++ + &quot;: *EMPTY* ; &quot;);</span>
+<span class="nc" id="L898">		s.edges.add(g.buildEdge(s.node, null, EdgeLabel.BLANK));</span>
+
+<span class="nc" id="L900">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitExpressionStatement(ExpressionStatementContext ctx) {
+<span class="fc" id="L905">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="fc" id="L906">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="fc" id="L908">		s.node = g.buildNode(nodeCounter++ + &quot;: &quot; + ctx.accept(new TreePrinter()));</span>
+<span class="fc" id="L909">		s.edges.add(g.buildEdge(s.node, null, EdgeLabel.BLANK));</span>
+
+<span class="fc" id="L911">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitStatementExpression(StatementExpressionContext ctx) {
+		// Ignore
+<span class="nc" id="L917">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitConstantExpression(ConstantExpressionContext ctx) {
+		// Ignore
+<span class="nc" id="L923">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitCatches(CatchesContext ctx) {
+<span class="nc" id="L928">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public WorkingGraph visitCatchClause(CatchClauseContext ctx) {
+<span class="fc" id="L933">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="fc" id="L934">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="fc" id="L936">		s.node = g</span>
+<span class="fc" id="L937">			.buildNode(nodeCounter++ + &quot;: catch ( &quot; + ctx.formalParameter().type().accept(new TreePrinter()) + &quot;)&quot;);</span>
+
+<span class="fc" id="L939">		WorkingGraph body = visitBlock(ctx.block());</span>
+
+<span class="fc" id="L941">		s.edges.add(g.buildEdge(s.node, body.node, EdgeLabel.CAUGHT));</span>
+<span class="fc" id="L942">		s.edges.add(g.buildEdge(s.node, null, EdgeLabel.THROWN));</span>
+<span class="fc" id="L943">		s.edges.addAll(body.edges);</span>
+
+<span class="fc" id="L945">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitSwitchBlockStatementGroup(SwitchBlockStatementGroupContext ctx) {
+		// Ignore
+<span class="nc" id="L951">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitSwitchLabel(SwitchLabelContext ctx) {
+		// Ignore
+<span class="nc" id="L957">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitForInit(ForInitContext ctx) {
+		// Ignore
+<span class="nc" id="L963">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitForUpdate(ForUpdateContext ctx) {
+		// Ignore
+<span class="nc" id="L969">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitModifier(ModifierContext ctx) {
+		// Ignore
+<span class="fc" id="L975">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitVariableDeclarators(VariableDeclaratorsContext ctx) {
+<span class="nc" id="L980">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public WorkingGraph visitVariableDeclarator(VariableDeclaratorContext ctx) {
+<span class="nc" id="L985">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public WorkingGraph visitVariableDeclaratorId(VariableDeclaratorIdContext ctx) {
+		// Ignore
+<span class="nc" id="L991">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitConstantDeclarator(ConstantDeclaratorContext ctx) {
+<span class="nc" id="L996">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public WorkingGraph visitCompilationUnit(CompilationUnitContext ctx) {
+<span class="fc" id="L1001">		QualifiedIdentifierContext pkg = ctx.qualifiedIdentifier();</span>
+
+<span class="pc bpc" id="L1003" title="1 of 2 branches missed.">		if(pkg != null)</span>
+<span class="nc" id="L1004">			nameStack.push(pkg.accept(new TreePrinter()));</span>
+
+<span class="fc bfc" id="L1006" title="All 2 branches covered.">		for(TypeDeclarationContext typeDeclaration : ctx.typeDeclaration())</span>
+<span class="fc" id="L1007">			typeDeclaration.accept(this);</span>
+
+<span class="fc" id="L1009">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitImportDeclaration(ImportDeclarationContext ctx) {
+		// Ignore
+<span class="nc" id="L1015">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitTypeDeclaration(TypeDeclarationContext ctx) {
+<span class="fc" id="L1020">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public WorkingGraph visitClassOrInterfaceDeclaration(ClassOrInterfaceDeclarationContext ctx) {
+<span class="fc" id="L1025">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public WorkingGraph visitClassDeclaration(ClassDeclarationContext ctx) {
+<span class="fc" id="L1030">		nameStack.push(ctx.identifier().getText());</span>
+<span class="fc" id="L1031">		visitClassBody(ctx.classBody());</span>
+
+<span class="fc" id="L1033">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitInterfaceDeclaration(InterfaceDeclarationContext ctx) {
+		// Possible nested classes
+<span class="nc" id="L1039">		nameStack.push(ctx.identifier().getText());</span>
+<span class="nc" id="L1040">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public WorkingGraph visitTypeList(TypeListContext ctx) {
+<span class="nc" id="L1045">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public WorkingGraph visitClassBody(ClassBodyContext ctx) {
+<span class="fc" id="L1050">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public WorkingGraph visitInterfaceBody(InterfaceBodyContext ctx) {
+<span class="nc" id="L1055">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public WorkingGraph visitClassBodyDeclaration(ClassBodyDeclarationContext ctx) {
+<span class="fc" id="L1060">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public WorkingGraph visitMemberDeclaration(MemberDeclarationContext ctx) {
+<span class="fc" id="L1065">		return visitChildren(ctx);</span>
+	}
+
+	private String getSignature(String identifier, FormalParametersContext ctx) {
+<span class="fc" id="L1069">		StringBuilder sb = new StringBuilder();</span>
+
+<span class="fc" id="L1071">		sb.append(identifier);</span>
+<span class="fc" id="L1072">		sb.append(&quot;(&quot;);</span>
+
+<span class="fc" id="L1074">		List&lt;FormalParameterContext&gt; formals = ctx.formalParameter();</span>
+<span class="fc" id="L1075">		int size = formals.size();</span>
+
+<span class="fc bfc" id="L1077" title="All 2 branches covered.">		if(size &gt; 0) {</span>
+<span class="fc" id="L1078">			sb.append(formals.get(0).type().accept(new TreePrinter()));</span>
+
+<span class="fc bfc" id="L1080" title="All 2 branches covered.">			for(int i = 1; i &lt; size; i++) {</span>
+<span class="fc" id="L1081">				sb.append(&quot;, &quot;);</span>
+<span class="fc" id="L1082">				sb.append(formals.get(i).type().accept(new TreePrinter()));</span>
+			}
+		}
+
+<span class="fc" id="L1086">		sb.append(&quot;)&quot;);</span>
+
+<span class="fc" id="L1088">		return sb.toString();</span>
+	}
+
+	@Override
+	public WorkingGraph visitMethodDeclaration(MethodDeclarationContext ctx) {
+<span class="pc bpc" id="L1093" title="1 of 2 branches missed.">		if(ctx.block() != null) {</span>
+<span class="fc" id="L1094">			String identifier = ctx.identifier().getText();</span>
+<span class="fc" id="L1095">			String signature = getSignature(identifier, ctx.formalParameters());</span>
+<span class="fc" id="L1096">			ControlFlowGraph g = new ControlFlowGraph(getCurrentName() + &quot;.&quot; + signature);</span>
+
+<span class="fc" id="L1098">			graphMap.put(ctx.parent, g);</span>
+
+<span class="fc" id="L1100">			WorkingGraph s = visitBlock(ctx.block());</span>
+
+<span class="fc" id="L1102">			g.buildEdge(g.entry, s.node, EdgeLabel.BLANK);</span>
+
+<span class="fc bfc" id="L1104" title="All 2 branches covered.">			for(Edge edge : g.edges()) {</span>
+<span class="fc" id="L1105">				EdgeLabel label = edge.label();</span>
+
+<span class="fc bfc" id="L1107" title="All 2 branches covered.">				if(edge.target() == null) {</span>
+<span class="fc bfc" id="L1108" title="All 2 branches covered.">					if(label == EdgeLabel.THROWN)</span>
+<span class="fc" id="L1109">						edge.setTarget(g.abruptExit);</span>
+					else
+<span class="fc" id="L1111">						edge.setTarget(g.normalExit);</span>
+				}
+<span class="fc" id="L1113">			}</span>
+
+<span class="fc bfc" id="L1115" title="All 2 branches covered.">			for(Edge edge : g.edges())</span>
+<span class="pc bpc" id="L1116" title="1 of 2 branches missed.">				if(edge.target() == null)</span>
+<span class="nc" id="L1117">					throw new IllegalStateException(</span>
+						&quot;The edge &quot; + edge + &quot; should not have a null target at this point.&quot;);
+		}
+
+<span class="fc" id="L1121">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitInterfaceBodyDeclaration(InterfaceBodyDeclarationContext ctx) {
+		// Potentially nested classes
+<span class="nc" id="L1127">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public WorkingGraph visitFormalParameters(FormalParametersContext ctx) {
+		// Ignore
+<span class="nc" id="L1133">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitFormalParameter(FormalParameterContext ctx) {
+		// Ignore
+<span class="nc" id="L1139">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitDims(DimsContext ctx) {
+		// Ignore
+<span class="nc" id="L1145">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitParenthesizedExpression(ParenthesizedExpressionContext ctx) {
+		// Ignore
+<span class="nc" id="L1151">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitStatement(StatementContext ctx) {
+<span class="fc" id="L1156">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public WorkingGraph visitSuperclass(SuperclassContext ctx) {
+		// Ignore
+<span class="nc" id="L1162">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitSuperinterfaces(SuperinterfacesContext ctx) {
+		// Ignore
+<span class="nc" id="L1168">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitExtendsInterfaces(ExtendsInterfacesContext ctx) {
+		// Ignore
+<span class="nc" id="L1174">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitEmptyDeclaration(EmptyDeclarationContext ctx) {
+		// Ignore
+<span class="nc" id="L1180">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitInitializer(InitializerContext ctx) {
+<span class="nc" id="L1185">		ControlFlowGraph g = new ControlFlowGraph(getCurrentName() + &quot;.&lt;init&gt;&quot;);</span>
+
+<span class="nc" id="L1187">		graphMap.put(ctx.parent, g);</span>
+
+<span class="nc" id="L1189">		WorkingGraph s = visitBlock(ctx.block());</span>
+
+<span class="nc" id="L1191">		g.buildEdge(g.entry, s.node, EdgeLabel.BLANK);</span>
+
+<span class="nc bnc" id="L1193" title="All 2 branches missed.">		for(Edge edge : s.edges) {</span>
+<span class="nc" id="L1194">			EdgeLabel label = edge.label();</span>
+
+<span class="nc bnc" id="L1196" title="All 2 branches missed.">			if(edge.target() == null) {</span>
+<span class="nc bnc" id="L1197" title="All 2 branches missed.">				if(label == EdgeLabel.THROWN)</span>
+<span class="nc" id="L1198">					edge.setTarget(g.abruptExit);</span>
+				else
+<span class="nc" id="L1200">					edge.setTarget(g.normalExit);</span>
+			}
+<span class="nc" id="L1202">		}</span>
+
+<span class="nc bnc" id="L1204" title="All 2 branches missed.">		if(!s.breakEdges.isEmpty())</span>
+<span class="nc" id="L1205">			throw new IllegalStateException(&quot;WorkingGraph still contains break edges: &quot; + s);</span>
+
+<span class="nc bnc" id="L1207" title="All 2 branches missed.">		if(!s.continueEdges.isEmpty())</span>
+<span class="nc" id="L1208">			throw new IllegalStateException(&quot;WorkingGraph still contains continue edges: &quot; + s);</span>
+
+<span class="nc" id="L1210">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitStaticInitializer(StaticInitializerContext ctx) {
+<span class="nc" id="L1215">		ControlFlowGraph g = new ControlFlowGraph(getCurrentName() + &quot;.&lt;clinit&gt;&quot;);</span>
+
+<span class="nc" id="L1217">		graphMap.put(ctx.parent, g);</span>
+
+<span class="nc" id="L1219">		WorkingGraph s = visitBlock(ctx.block());</span>
+
+<span class="nc" id="L1221">		g.buildEdge(g.entry, s.node, EdgeLabel.BLANK);</span>
+
+<span class="nc bnc" id="L1223" title="All 2 branches missed.">		for(Edge edge : s.edges) {</span>
+<span class="nc" id="L1224">			EdgeLabel label = edge.label();</span>
+
+<span class="nc bnc" id="L1226" title="All 2 branches missed.">			if(edge.target() == null) {</span>
+<span class="nc bnc" id="L1227" title="All 2 branches missed.">				if(label == EdgeLabel.THROWN)</span>
+<span class="nc" id="L1228">					edge.setTarget(g.abruptExit);</span>
+				else
+<span class="nc" id="L1230">					edge.setTarget(g.normalExit);</span>
+			}
+<span class="nc" id="L1232">		}</span>
+
+<span class="nc bnc" id="L1234" title="All 2 branches missed.">		if(!s.breakEdges.isEmpty())</span>
+<span class="nc" id="L1235">			throw new IllegalStateException(&quot;WorkingGraph still contains break edges: &quot; + s);</span>
+
+<span class="nc bnc" id="L1237" title="All 2 branches missed.">		if(!s.continueEdges.isEmpty())</span>
+<span class="nc" id="L1238">			throw new IllegalStateException(&quot;WorkingGraph still contains continue edges: &quot; + s);</span>
+
+<span class="nc" id="L1240">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitResult(ResultContext ctx) {
+		// Ignore
+<span class="nc" id="L1246">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitThrows_(Throws_Context ctx) {
+		// Ignore
+<span class="nc" id="L1252">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitFieldDeclaration(FieldDeclarationContext ctx) {
+<span class="nc" id="L1257">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public WorkingGraph visitConstructorDeclaration(ConstructorDeclarationContext ctx) {
+<span class="nc" id="L1262">		String identifier = ctx.identifier().getText();</span>
+<span class="nc" id="L1263">		String signature = getSignature(identifier, ctx.formalParameters());</span>
+<span class="nc" id="L1264">		ControlFlowGraph g = new ControlFlowGraph(getCurrentName() + &quot;.&quot; + signature);</span>
+
+<span class="nc" id="L1266">		graphMap.put(ctx.parent, g);</span>
+
+<span class="nc" id="L1268">		WorkingGraph s = visitConstructorBody(ctx.constructorBody());</span>
+
+<span class="nc" id="L1270">		g.buildEdge(g.entry, s.node, EdgeLabel.BLANK);</span>
+
+<span class="nc bnc" id="L1272" title="All 2 branches missed.">		for(Edge edge : s.edges) {</span>
+<span class="nc" id="L1273">			EdgeLabel label = edge.label();</span>
+
+<span class="nc bnc" id="L1275" title="All 2 branches missed.">			if(edge.target() == null) {</span>
+<span class="nc bnc" id="L1276" title="All 2 branches missed.">				if(label == EdgeLabel.THROWN)</span>
+<span class="nc" id="L1277">					edge.setTarget(g.abruptExit);</span>
+				else
+<span class="nc" id="L1279">					edge.setTarget(g.normalExit);</span>
+			}
+<span class="nc" id="L1281">		}</span>
+
+<span class="nc bnc" id="L1283" title="All 2 branches missed.">		if(!s.breakEdges.isEmpty())</span>
+<span class="nc" id="L1284">			throw new IllegalStateException(&quot;WorkingGraph still contains break edges: &quot; + s);</span>
+
+<span class="nc bnc" id="L1286" title="All 2 branches missed.">		if(!s.continueEdges.isEmpty())</span>
+<span class="nc" id="L1287">			throw new IllegalStateException(&quot;WorkingGraph still contains continue edges: &quot; + s);</span>
+
+<span class="nc" id="L1289">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitConstructorBody(ConstructorBodyContext ctx) {
+<span class="nc" id="L1294">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="nc" id="L1295">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="nc" id="L1297">		s.node = g.buildNode(nodeCounter++ + &quot;: body&quot;);</span>
+<span class="nc" id="L1298">		s.edges.add(g.buildEdge(s.node, null, EdgeLabel.BLANK));</span>
+
+<span class="nc" id="L1300">		WorkingGraph body = null;</span>
+<span class="nc" id="L1301">		ExplicitConstructorInvocationContext eci = ctx.explicitConstructorInvocation();</span>
+
+<span class="nc bnc" id="L1303" title="All 2 branches missed.">		if(eci != null) {</span>
+<span class="nc" id="L1304">			body = visitExplicitConstructorInvocation(eci);</span>
+<span class="nc" id="L1305">			s.connect(body);</span>
+		}
+
+<span class="nc bnc" id="L1308" title="All 2 branches missed.">		for(BlockStatementContext statement : ctx.blockStatement()) {</span>
+<span class="nc" id="L1309">			body = visitBlockStatement(statement);</span>
+<span class="nc" id="L1310">			s.connect(body);</span>
+<span class="nc" id="L1311">		}</span>
+
+<span class="nc" id="L1313">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitExplicitConstructorInvocation(ExplicitConstructorInvocationContext ctx) {
+<span class="nc" id="L1318">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="nc" id="L1319">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="nc" id="L1321">		s.node = g.buildNode(nodeCounter++ + &quot;: &quot; + ctx.accept(new TreePrinter()));</span>
+<span class="nc" id="L1322">		s.edges.add(g.buildEdge(s.node, null, EdgeLabel.BLANK));</span>
+
+<span class="nc" id="L1324">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitInterfaceMemberDeclaration(InterfaceMemberDeclarationContext ctx) {
+<span class="nc" id="L1329">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public WorkingGraph visitInterfaceMethodDeclaration(InterfaceMethodDeclarationContext ctx) {
+		// Ignore
+<span class="nc" id="L1335">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitConstantDeclaration(ConstantDeclarationContext ctx) {
+		// Ignore
+<span class="nc" id="L1341">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitQualifiedIdentifiers(QualifiedIdentifiersContext ctx) {
+		// Ignore
+<span class="nc" id="L1347">		return null;</span>
+	}
+
+	@Override
+	public WorkingGraph visitElseClause(ElseClauseContext ctx) {
+<span class="fc" id="L1352">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="fc" id="L1353">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="fc" id="L1355">		s.node = g.buildNode(nodeCounter++ + &quot;: else&quot;);</span>
+
+<span class="fc" id="L1357">		WorkingGraph body = visitStatement(ctx.statement());</span>
+
+<span class="fc" id="L1359">		s.edges.add(g.buildEdge(s.node, body.node, EdgeLabel.BLANK));</span>
+<span class="fc" id="L1360">		s.connect(body);</span>
+
+<span class="fc" id="L1362">		return s;</span>
+	}
+
+	@Override
+	public WorkingGraph visitFinallyClause(FinallyClauseContext ctx) {
+		// Ignore
+<span class="nc" id="L1368">		return null;</span>
+	}
+
+	@SuppressWarnings(&quot;javadoc&quot;)
+	public WorkingGraph visitFinallyClause(FinallyClauseContext ctx, boolean delayedThrown) {
+<span class="nc" id="L1373">		ControlFlowGraph g = getGraph(ctx);</span>
+<span class="nc" id="L1374">		WorkingGraph s = new WorkingGraph();</span>
+
+<span class="nc" id="L1376">		s.node = g.buildNode(nodeCounter++ + &quot;: finally&quot;);</span>
+
+<span class="nc" id="L1378">		WorkingGraph body = visitFinallyBlock(ctx.block(), delayedThrown);</span>
+
+<span class="nc" id="L1380">		s.edges.add(g.buildEdge(s.node, body.node, EdgeLabel.BLANK));</span>
+
+<span class="nc bnc" id="L1382" title="All 2 branches missed.">		if(delayedThrown)</span>
+<span class="nc" id="L1383">			s.edges.add(g.buildEdge(s.node, body.node, EdgeLabel.THROWN_DELAYED));</span>
+
+<span class="nc" id="L1385">		return s;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

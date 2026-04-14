@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProgramDependenceGraphTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">org.lsmr.pdg</a> &gt; <span class="el_source">ProgramDependenceGraphTest.java</span></div><h1>ProgramDependenceGraphTest.java</h1><pre class="source lang-java linenums">package org.lsmr.pdg;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+<span class="fc" id="L8">public class ProgramDependenceGraphTest {</span>
+
+    private ProgramDependenceGraph pdg;
+    private PDGNode nodeA;
+    private PDGNode nodeB;
+    private PDGNode nodeC;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        // Build a real PDG from a simple source so PDGNode wraps a real CFG node
+<span class="fc" id="L18">        pdg = PDGTestUtils.buildPDGFromSource(&quot;Simple&quot;,</span>
+            &quot;class Simple {\n&quot; +
+            &quot;  void m() {\n&quot; +
+            &quot;    int x = 1;\n&quot; +
+            &quot;    int y = x + 2;\n&quot; +
+            &quot;    int z = y + 3;\n&quot; +
+            &quot;  }\n&quot; +
+            &quot;}\n&quot;, &quot;.m(&quot;);
+
+        // Also create standalone nodes for unit-level tests
+        // We need real CFG nodes — build a tiny one
+<span class="fc" id="L29">        ProgramDependenceGraph tiny = PDGTestUtils.buildPDGFromSource(&quot;Tiny&quot;,</span>
+            &quot;class Tiny {\n&quot; +
+            &quot;  void m() {\n&quot; +
+            &quot;    int a = 1;\n&quot; +
+            &quot;    int b = 2;\n&quot; +
+            &quot;    int c = 3;\n&quot; +
+            &quot;  }\n&quot; +
+            &quot;}\n&quot;, &quot;.m(&quot;);
+<span class="fc" id="L37">        var nodes = tiny.getNodes();</span>
+<span class="fc" id="L38">        nodeA = nodes.get(0);</span>
+<span class="fc" id="L39">        nodeB = nodes.get(1);</span>
+<span class="fc" id="L40">        nodeC = nodes.get(2);</span>
+<span class="fc" id="L41">    }</span>
+
+    // -----------------------------------------------------------------------
+    // ProgramDependenceGraph tests
+    // -----------------------------------------------------------------------
+
+    @Test
+    void newGraphHasNoNodes() {
+<span class="fc" id="L49">        ProgramDependenceGraph g = new ProgramDependenceGraph();</span>
+<span class="fc" id="L50">        assertTrue(g.getNodes().isEmpty());</span>
+<span class="fc" id="L51">    }</span>
+
+    @Test
+    void newGraphHasNoEdges() {
+<span class="fc" id="L55">        ProgramDependenceGraph g = new ProgramDependenceGraph();</span>
+<span class="fc" id="L56">        assertTrue(g.getEdges().isEmpty());</span>
+<span class="fc" id="L57">    }</span>
+
+    @Test
+    void addNodeIncreasesCount() {
+<span class="fc" id="L61">        ProgramDependenceGraph g = new ProgramDependenceGraph();</span>
+<span class="fc" id="L62">        g.addNode(nodeA);</span>
+<span class="fc" id="L63">        assertEquals(1, g.getNodes().size());</span>
+<span class="fc" id="L64">    }</span>
+
+    @Test
+    void addNullNodeIsIgnored() {
+<span class="fc" id="L68">        ProgramDependenceGraph g = new ProgramDependenceGraph();</span>
+<span class="fc" id="L69">        g.addNode(null);</span>
+<span class="fc" id="L70">        assertTrue(g.getNodes().isEmpty());</span>
+<span class="fc" id="L71">    }</span>
+
+    @Test
+    void addDuplicateNodeIsIgnored() {
+<span class="fc" id="L75">        ProgramDependenceGraph g = new ProgramDependenceGraph();</span>
+<span class="fc" id="L76">        g.addNode(nodeA);</span>
+<span class="fc" id="L77">        g.addNode(nodeA);</span>
+<span class="fc" id="L78">        assertEquals(1, g.getNodes().size());</span>
+<span class="fc" id="L79">    }</span>
+
+    @Test
+    void addEdgeIncreasesCount() {
+<span class="fc" id="L83">        ProgramDependenceGraph g = new ProgramDependenceGraph();</span>
+<span class="fc" id="L84">        g.addNode(nodeA);</span>
+<span class="fc" id="L85">        g.addNode(nodeB);</span>
+<span class="fc" id="L86">        PDGEdge edge = new PDGEdge(nodeA, nodeB, PDGEdge.Type.CONTROL, null);</span>
+<span class="fc" id="L87">        g.addEdge(edge);</span>
+<span class="fc" id="L88">        assertEquals(1, g.getEdges().size());</span>
+<span class="fc" id="L89">    }</span>
+
+    @Test
+    void addNullEdgeIsIgnored() {
+<span class="fc" id="L93">        ProgramDependenceGraph g = new ProgramDependenceGraph();</span>
+<span class="fc" id="L94">        g.addEdge(null);</span>
+<span class="fc" id="L95">        assertTrue(g.getEdges().isEmpty());</span>
+<span class="fc" id="L96">    }</span>
+
+    @Test
+    void addDuplicateEdgeIsIgnored() {
+<span class="fc" id="L100">        ProgramDependenceGraph g = new ProgramDependenceGraph();</span>
+<span class="fc" id="L101">        g.addNode(nodeA);</span>
+<span class="fc" id="L102">        g.addNode(nodeB);</span>
+<span class="fc" id="L103">        PDGEdge edge = new PDGEdge(nodeA, nodeB, PDGEdge.Type.CONTROL, null);</span>
+<span class="fc" id="L104">        g.addEdge(edge);</span>
+<span class="fc" id="L105">        g.addEdge(edge);</span>
+<span class="fc" id="L106">        assertEquals(1, g.getEdges().size());</span>
+<span class="fc" id="L107">    }</span>
+
+    @Test
+    void containsNodeReturnsTrueForAddedNode() {
+<span class="fc" id="L111">        ProgramDependenceGraph g = new ProgramDependenceGraph();</span>
+<span class="fc" id="L112">        g.addNode(nodeA);</span>
+<span class="fc" id="L113">        assertTrue(g.containsNode(nodeA));</span>
+<span class="fc" id="L114">    }</span>
+
+    @Test
+    void containsNodeReturnsFalseForMissingNode() {
+<span class="fc" id="L118">        ProgramDependenceGraph g = new ProgramDependenceGraph();</span>
+<span class="fc" id="L119">        assertFalse(g.containsNode(nodeA));</span>
+<span class="fc" id="L120">    }</span>
+
+    @Test
+    void getEdgesFromReturnsCorrectEdges() {
+<span class="fc" id="L124">        ProgramDependenceGraph g = new ProgramDependenceGraph();</span>
+<span class="fc" id="L125">        g.addNode(nodeA);</span>
+<span class="fc" id="L126">        g.addNode(nodeB);</span>
+<span class="fc" id="L127">        g.addNode(nodeC);</span>
+<span class="fc" id="L128">        PDGEdge edgeAB = new PDGEdge(nodeA, nodeB, PDGEdge.Type.CONTROL, null);</span>
+<span class="fc" id="L129">        PDGEdge edgeAC = new PDGEdge(nodeA, nodeC, PDGEdge.Type.CONTROL, null);</span>
+<span class="fc" id="L130">        PDGEdge edgeBC = new PDGEdge(nodeB, nodeC, PDGEdge.Type.DATA, &quot;x&quot;);</span>
+<span class="fc" id="L131">        g.addEdge(edgeAB);</span>
+<span class="fc" id="L132">        g.addEdge(edgeAC);</span>
+<span class="fc" id="L133">        g.addEdge(edgeBC);</span>
+
+<span class="fc" id="L135">        var fromA = g.getEdgesFrom(nodeA);</span>
+<span class="fc" id="L136">        assertEquals(2, fromA.size());</span>
+<span class="fc" id="L137">        assertTrue(fromA.contains(edgeAB));</span>
+<span class="fc" id="L138">        assertTrue(fromA.contains(edgeAC));</span>
+<span class="fc" id="L139">    }</span>
+
+    @Test
+    void getEdgesToReturnsCorrectEdges() {
+<span class="fc" id="L143">        ProgramDependenceGraph g = new ProgramDependenceGraph();</span>
+<span class="fc" id="L144">        g.addNode(nodeA);</span>
+<span class="fc" id="L145">        g.addNode(nodeB);</span>
+<span class="fc" id="L146">        g.addNode(nodeC);</span>
+<span class="fc" id="L147">        PDGEdge edgeAC = new PDGEdge(nodeA, nodeC, PDGEdge.Type.CONTROL, null);</span>
+<span class="fc" id="L148">        PDGEdge edgeBC = new PDGEdge(nodeB, nodeC, PDGEdge.Type.DATA, &quot;x&quot;);</span>
+<span class="fc" id="L149">        g.addEdge(edgeAC);</span>
+<span class="fc" id="L150">        g.addEdge(edgeBC);</span>
+
+<span class="fc" id="L152">        var toC = g.getEdgesTo(nodeC);</span>
+<span class="fc" id="L153">        assertEquals(2, toC.size());</span>
+<span class="fc" id="L154">        assertTrue(toC.contains(edgeAC));</span>
+<span class="fc" id="L155">        assertTrue(toC.contains(edgeBC));</span>
+<span class="fc" id="L156">    }</span>
+
+    @Test
+    void getNodesReturnsUnmodifiableList() {
+<span class="fc" id="L160">        ProgramDependenceGraph g = new ProgramDependenceGraph();</span>
+<span class="fc" id="L161">        g.addNode(nodeA);</span>
+<span class="fc" id="L162">        assertThrows(UnsupportedOperationException.class,</span>
+<span class="nc" id="L163">            () -&gt; g.getNodes().add(nodeB));</span>
+<span class="fc" id="L164">    }</span>
+
+    @Test
+    void getEdgesReturnsUnmodifiableList() {
+<span class="fc" id="L168">        ProgramDependenceGraph g = new ProgramDependenceGraph();</span>
+<span class="fc" id="L169">        PDGEdge edge = new PDGEdge(nodeA, nodeB, PDGEdge.Type.CONTROL, null);</span>
+<span class="fc" id="L170">        assertThrows(UnsupportedOperationException.class,</span>
+<span class="nc" id="L171">            () -&gt; g.getEdges().add(edge));</span>
+<span class="fc" id="L172">    }</span>
+
+    @Test
+    void realPdgHasNodes() {
+<span class="fc" id="L176">        assertFalse(pdg.getNodes().isEmpty(), &quot;Built PDG should have nodes&quot;);</span>
+<span class="fc" id="L177">    }</span>
+
+    @Test
+    void realPdgHasEdges() {
+<span class="fc" id="L181">        assertFalse(pdg.getEdges().isEmpty(), &quot;Built PDG should have edges&quot;);</span>
+<span class="fc" id="L182">    }</span>
+
+    // -----------------------------------------------------------------------
+    // PDGNode tests
+    // -----------------------------------------------------------------------
+
+    @Test
+    void pdgNodeGetLabelIsNotNull() {
+<span class="fc" id="L190">        assertNotNull(nodeA.getLabel());</span>
+<span class="fc" id="L191">    }</span>
+
+    @Test
+    void pdgNodeGetLabelIsNotEmpty() {
+<span class="fc" id="L195">        assertFalse(nodeA.getLabel().isEmpty());</span>
+<span class="fc" id="L196">    }</span>
+
+    @Test
+    void pdgNodeToStringContainsLabel() {
+<span class="fc" id="L200">        assertTrue(nodeA.toString().contains(nodeA.getLabel()));</span>
+<span class="fc" id="L201">    }</span>
+
+    @Test
+    void pdgNodeEqualsItself() {
+<span class="fc" id="L205">        assertEquals(nodeA, nodeA);</span>
+<span class="fc" id="L206">    }</span>
+
+    @Test
+    void pdgNodeNotEqualToNull() {
+<span class="fc" id="L210">        assertNotEquals(nodeA, null);</span>
+<span class="fc" id="L211">    }</span>
+
+    @Test
+    void pdgNodeNotEqualToDifferentNode() {
+<span class="fc" id="L215">        assertNotEquals(nodeA, nodeB);</span>
+<span class="fc" id="L216">    }</span>
+
+    @Test
+    void pdgNodeHashCodeConsistent() {
+<span class="fc" id="L220">        assertEquals(nodeA.hashCode(), nodeA.hashCode());</span>
+<span class="fc" id="L221">    }</span>
+
+    // -----------------------------------------------------------------------
+    // PDGEdge tests
+    // -----------------------------------------------------------------------
+
+    @Test
+    void controlEdgeGetFrom() {
+<span class="fc" id="L229">        PDGEdge edge = new PDGEdge(nodeA, nodeB, PDGEdge.Type.CONTROL, null);</span>
+<span class="fc" id="L230">        assertEquals(nodeA, edge.getFrom());</span>
+<span class="fc" id="L231">    }</span>
+
+    @Test
+    void controlEdgeGetTo() {
+<span class="fc" id="L235">        PDGEdge edge = new PDGEdge(nodeA, nodeB, PDGEdge.Type.CONTROL, null);</span>
+<span class="fc" id="L236">        assertEquals(nodeB, edge.getTo());</span>
+<span class="fc" id="L237">    }</span>
+
+    @Test
+    void controlEdgeGetType() {
+<span class="fc" id="L241">        PDGEdge edge = new PDGEdge(nodeA, nodeB, PDGEdge.Type.CONTROL, null);</span>
+<span class="fc" id="L242">        assertEquals(PDGEdge.Type.CONTROL, edge.getType());</span>
+<span class="fc" id="L243">    }</span>
+
+    @Test
+    void controlEdgeGetVariableIsNull() {
+<span class="fc" id="L247">        PDGEdge edge = new PDGEdge(nodeA, nodeB, PDGEdge.Type.CONTROL, null);</span>
+<span class="fc" id="L248">        assertNull(edge.getVariable());</span>
+<span class="fc" id="L249">    }</span>
+
+    @Test
+    void dataEdgeGetVariable() {
+<span class="fc" id="L253">        PDGEdge edge = new PDGEdge(nodeA, nodeB, PDGEdge.Type.DATA, &quot;x&quot;);</span>
+<span class="fc" id="L254">        assertEquals(&quot;x&quot;, edge.getVariable());</span>
+<span class="fc" id="L255">    }</span>
+
+    @Test
+    void dataEdgeGetType() {
+<span class="fc" id="L259">        PDGEdge edge = new PDGEdge(nodeA, nodeB, PDGEdge.Type.DATA, &quot;x&quot;);</span>
+<span class="fc" id="L260">        assertEquals(PDGEdge.Type.DATA, edge.getType());</span>
+<span class="fc" id="L261">    }</span>
+
+    @Test
+    void edgeEqualsItself() {
+<span class="fc" id="L265">        PDGEdge edge = new PDGEdge(nodeA, nodeB, PDGEdge.Type.CONTROL, null);</span>
+<span class="fc" id="L266">        assertEquals(edge, edge);</span>
+<span class="fc" id="L267">    }</span>
+
+    @Test
+    void edgeNotEqualToNull() {
+<span class="fc" id="L271">        PDGEdge edge = new PDGEdge(nodeA, nodeB, PDGEdge.Type.CONTROL, null);</span>
+<span class="fc" id="L272">        assertNotEquals(edge, null);</span>
+<span class="fc" id="L273">    }</span>
+
+    @Test
+    void edgeNotEqualToNonEdge() {
+<span class="fc" id="L277">        PDGEdge edge = new PDGEdge(nodeA, nodeB, PDGEdge.Type.CONTROL, null);</span>
+<span class="fc" id="L278">        assertNotEquals(edge, &quot;not an edge&quot;);</span>
+<span class="fc" id="L279">    }</span>
+
+    @Test
+    void sameEdgesAreEqual() {
+<span class="fc" id="L283">        PDGEdge e1 = new PDGEdge(nodeA, nodeB, PDGEdge.Type.DATA, &quot;x&quot;);</span>
+<span class="fc" id="L284">        PDGEdge e2 = new PDGEdge(nodeA, nodeB, PDGEdge.Type.DATA, &quot;x&quot;);</span>
+<span class="fc" id="L285">        assertEquals(e1, e2);</span>
+<span class="fc" id="L286">    }</span>
+
+    @Test
+    void differentVariableMeansNotEqual() {
+<span class="fc" id="L290">        PDGEdge e1 = new PDGEdge(nodeA, nodeB, PDGEdge.Type.DATA, &quot;x&quot;);</span>
+<span class="fc" id="L291">        PDGEdge e2 = new PDGEdge(nodeA, nodeB, PDGEdge.Type.DATA, &quot;y&quot;);</span>
+<span class="fc" id="L292">        assertNotEquals(e1, e2);</span>
+<span class="fc" id="L293">    }</span>
+
+    @Test
+    void differentTypeMeansNotEqual() {
+<span class="fc" id="L297">        PDGEdge e1 = new PDGEdge(nodeA, nodeB, PDGEdge.Type.CONTROL, null);</span>
+<span class="fc" id="L298">        PDGEdge e2 = new PDGEdge(nodeA, nodeB, PDGEdge.Type.DATA, null);</span>
+<span class="fc" id="L299">        assertNotEquals(e1, e2);</span>
+<span class="fc" id="L300">    }</span>
+
+    @Test
+    void edgeHashCodeConsistent() {
+<span class="fc" id="L304">        PDGEdge edge = new PDGEdge(nodeA, nodeB, PDGEdge.Type.DATA, &quot;x&quot;);</span>
+<span class="fc" id="L305">        assertEquals(edge.hashCode(), edge.hashCode());</span>
+<span class="fc" id="L306">    }</span>
+
+    @Test
+    void equalEdgesHaveSameHashCode() {
+<span class="fc" id="L310">        PDGEdge e1 = new PDGEdge(nodeA, nodeB, PDGEdge.Type.DATA, &quot;x&quot;);</span>
+<span class="fc" id="L311">        PDGEdge e2 = new PDGEdge(nodeA, nodeB, PDGEdge.Type.DATA, &quot;x&quot;);</span>
+<span class="fc" id="L312">        assertEquals(e1.hashCode(), e2.hashCode());</span>
+<span class="fc" id="L313">    }</span>
+
+    @Test
+    void controlEdgeToStringContainsControl() {
+<span class="fc" id="L317">        PDGEdge edge = new PDGEdge(nodeA, nodeB, PDGEdge.Type.CONTROL, null);</span>
+<span class="fc" id="L318">        assertTrue(edge.toString().contains(&quot;CONTROL&quot;));</span>
+<span class="fc" id="L319">    }</span>
+
+    @Test
+    void dataEdgeToStringContainsVariable() {
+<span class="fc" id="L323">        PDGEdge edge = new PDGEdge(nodeA, nodeB, PDGEdge.Type.DATA, &quot;x&quot;);</span>
+<span class="fc" id="L324">        assertTrue(edge.toString().contains(&quot;x&quot;));</span>
+<span class="fc" id="L325">    }</span>
+
+    // -----------------------------------------------------------------------
+    // ProgramDependenceGraphBuilder tests
+    // -----------------------------------------------------------------------
+
+    @Test
+    void builderThrowsOnNullCFG() {
+<span class="fc" id="L333">        assertThrows(IllegalArgumentException.class,</span>
+<span class="nc" id="L334">            () -&gt; new ProgramDependenceGraphBuilder().build(null));</span>
+<span class="fc" id="L335">    }</span>
+
+    @Test
+    void builderProducesNonEmptyPDGForIfTest() throws Exception {
+<span class="fc" id="L339">        ProgramDependenceGraph g = PDGTestUtils.buildPDG(&quot;sample/IfTest.java&quot;);</span>
+<span class="fc" id="L340">        assertFalse(g.getNodes().isEmpty());</span>
+<span class="fc" id="L341">        assertFalse(g.getEdges().isEmpty());</span>
+<span class="fc" id="L342">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

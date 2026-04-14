@@ -1,0 +1,596 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TreePrinter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">org.lsmr.cfg</a> &gt; <span class="el_source">TreePrinter.java</span></div><h1>TreePrinter.java</h1><pre class="source lang-java linenums">package org.lsmr.cfg;
+
+import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.RuleNode;
+import org.antlr.v4.runtime.tree.TerminalNode;
+
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ArgumentsContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ArrayCreatorRestContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ArrayInitializerContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.AssignmentOperatorContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.BasicTypeContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.BlockContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.BlockStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.BreakStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.CatchClauseContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.CatchesContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ClassBodyContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ClassBodyDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ClassCreatorRestContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ClassDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ClassOrInterfaceDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.CompilationUnitContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ConstantDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ConstantDeclaratorContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ConstantExpressionContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ConstructorBodyContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ConstructorDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ContinueStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.CreatorContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.DimsContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.DoStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ElseClauseContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.EmptyDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.EmptyStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ExplicitConstructorInvocationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.Expression1Context;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.Expression1RestContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.Expression2Context;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.Expression2RestContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.Expression3Context;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ExpressionContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ExpressionStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ExtendsInterfacesContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.FieldDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.FinallyClauseContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ForInitContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ForStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ForUpdateContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.FormalParameterContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.FormalParametersContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.IdentifierContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.IdentifierSuffixContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.IfStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ImportDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InfixOpContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InitializerContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InnerCreatorContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InterfaceBodyContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InterfaceBodyDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InterfaceDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InterfaceMemberDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.InterfaceMethodDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.LabeledStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.LiteralContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.LocalVariableDeclarationStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.MemberDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.MethodDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ModifierContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ParenthesizedExpressionContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.PostfixOpContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.PrefixOpContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.PrimaryContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.QualifiedIdentifierContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.QualifiedIdentifiersContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ResultContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ReturnStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SelectorContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.StatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.StatementExpressionContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.StaticInitializerContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SuperSuffixContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SuperclassContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SuperinterfacesContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SwitchBlockStatementGroupContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SwitchLabelContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SwitchStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.SynchronizedStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.ThrowStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.Throws_Context;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.TryStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.TypeContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.TypeDeclarationContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.TypeListContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.VariableDeclaratorContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.VariableDeclaratorIdContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.VariableDeclaratorsContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.VariableInitializerContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParser.WhileStatementContext;
+import ca.ucalgary.cpsc499_02.w26.Java1_2ANTLRParserVisitor;
+
+/**
+ * This class will visit the nodes in a parse tree to print the resulting code.
+ */
+<span class="fc" id="L105">public class TreePrinter implements Java1_2ANTLRParserVisitor&lt;String&gt; {</span>
+	@Override
+	public String visit(ParseTree arg0) {
+<span class="fc" id="L108">		return arg0.accept(this);</span>
+	}
+
+	@Override
+	public String visitChildren(RuleNode arg0) {
+<span class="fc" id="L113">		StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L114">		int childCount = arg0.getChildCount();</span>
+
+<span class="fc bfc" id="L116" title="All 2 branches covered.">		for(int i = 0; i &lt; childCount; i++) {</span>
+<span class="fc" id="L117">			sb.append(visit(arg0.getChild(i)));</span>
+			
+<span class="fc bfc" id="L119" title="All 2 branches covered.">			if(sb.charAt(sb.length() - 1) != ' ')</span>
+<span class="fc" id="L120">				sb.append(&quot; &quot;);</span>
+		}
+
+<span class="fc" id="L123">		return sb.toString();</span>
+	}
+
+	@Override
+	public String visitErrorNode(ErrorNode arg0) {
+<span class="nc" id="L128">		return null;</span>
+	}
+
+	@Override
+	public String visitTerminal(TerminalNode arg0) {
+<span class="fc" id="L133">		return arg0.getText();</span>
+	}
+
+	@Override
+	public String visitIdentifier(IdentifierContext ctx) {
+<span class="fc" id="L138">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitQualifiedIdentifier(QualifiedIdentifierContext ctx) {
+<span class="fc" id="L143">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitLiteral(LiteralContext ctx) {
+<span class="fc" id="L148">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitType(TypeContext ctx) {
+<span class="fc" id="L153">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitBasicType(BasicTypeContext ctx) {
+<span class="fc" id="L158">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitExpression(ExpressionContext ctx) {
+<span class="fc" id="L163">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitAssignmentOperator(AssignmentOperatorContext ctx) {
+<span class="fc" id="L168">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitExpression1(Expression1Context ctx) {
+<span class="fc" id="L173">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitExpression1Rest(Expression1RestContext ctx) {
+<span class="nc" id="L178">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitExpression2(Expression2Context ctx) {
+<span class="fc" id="L183">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitExpression2Rest(Expression2RestContext ctx) {
+<span class="fc" id="L188">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitInfixOp(InfixOpContext ctx) {
+<span class="fc" id="L193">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitExpression3(Expression3Context ctx) {
+<span class="fc" id="L198">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitPrefixOp(PrefixOpContext ctx) {
+<span class="nc" id="L203">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitPostfixOp(PostfixOpContext ctx) {
+<span class="fc" id="L208">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitPrimary(PrimaryContext ctx) {
+<span class="fc" id="L213">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitIdentifierSuffix(IdentifierSuffixContext ctx) {
+<span class="fc" id="L218">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitSelector(SelectorContext ctx) {
+<span class="fc" id="L223">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitSuperSuffix(SuperSuffixContext ctx) {
+<span class="nc" id="L228">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitArguments(ArgumentsContext ctx) {
+<span class="fc" id="L233">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitCreator(CreatorContext ctx) {
+<span class="nc" id="L238">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitInnerCreator(InnerCreatorContext ctx) {
+<span class="nc" id="L243">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitArrayCreatorRest(ArrayCreatorRestContext ctx) {
+<span class="nc" id="L248">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitClassCreatorRest(ClassCreatorRestContext ctx) {
+<span class="nc" id="L253">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitArrayInitializer(ArrayInitializerContext ctx) {
+<span class="nc" id="L258">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitVariableInitializer(VariableInitializerContext ctx) {
+<span class="fc" id="L263">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitBlock(BlockContext ctx) {
+<span class="nc" id="L268">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitBlockStatement(BlockStatementContext ctx) {
+<span class="nc" id="L273">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitLocalVariableDeclarationStatement(LocalVariableDeclarationStatementContext ctx) {
+<span class="fc" id="L278">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitBreakStatement(BreakStatementContext ctx) {
+<span class="fc" id="L283">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitContinueStatement(ContinueStatementContext ctx) {
+<span class="nc" id="L288">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitDoStatement(DoStatementContext ctx) {
+<span class="nc" id="L293">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitIfStatement(IfStatementContext ctx) {
+<span class="nc" id="L298">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitTryStatement(TryStatementContext ctx) {
+<span class="nc" id="L303">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitForStatement(ForStatementContext ctx) {
+<span class="nc" id="L308">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitWhileStatement(WhileStatementContext ctx) {
+<span class="nc" id="L313">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitSwitchStatement(SwitchStatementContext ctx) {
+<span class="nc" id="L318">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitSynchronizedStatement(SynchronizedStatementContext ctx) {
+<span class="nc" id="L323">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitReturnStatement(ReturnStatementContext ctx) {
+<span class="fc" id="L328">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitThrowStatement(ThrowStatementContext ctx) {
+<span class="nc" id="L333">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitEmptyStatement(EmptyStatementContext ctx) {
+<span class="nc" id="L338">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitExpressionStatement(ExpressionStatementContext ctx) {
+<span class="fc" id="L343">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitStatementExpression(StatementExpressionContext ctx) {
+<span class="fc" id="L348">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitConstantExpression(ConstantExpressionContext ctx) {
+<span class="fc" id="L353">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitCatches(CatchesContext ctx) {
+<span class="nc" id="L358">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitCatchClause(CatchClauseContext ctx) {
+<span class="nc" id="L363">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitSwitchBlockStatementGroup(SwitchBlockStatementGroupContext ctx) {
+<span class="nc" id="L368">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitSwitchLabel(SwitchLabelContext ctx) {
+<span class="fc" id="L373">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitForInit(ForInitContext ctx) {
+<span class="fc" id="L378">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitForUpdate(ForUpdateContext ctx) {
+<span class="fc" id="L383">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitModifier(ModifierContext ctx) {
+<span class="nc" id="L388">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitVariableDeclarators(VariableDeclaratorsContext ctx) {
+<span class="fc" id="L393">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitVariableDeclarator(VariableDeclaratorContext ctx) {
+<span class="fc" id="L398">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitVariableDeclaratorId(VariableDeclaratorIdContext ctx) {
+<span class="nc" id="L403">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitConstantDeclarator(ConstantDeclaratorContext ctx) {
+<span class="nc" id="L408">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitCompilationUnit(CompilationUnitContext ctx) {
+<span class="nc" id="L413">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitImportDeclaration(ImportDeclarationContext ctx) {
+<span class="nc" id="L418">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitTypeDeclaration(TypeDeclarationContext ctx) {
+<span class="nc" id="L423">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitClassOrInterfaceDeclaration(ClassOrInterfaceDeclarationContext ctx) {
+<span class="nc" id="L428">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitClassDeclaration(ClassDeclarationContext ctx) {
+<span class="nc" id="L433">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitInterfaceDeclaration(InterfaceDeclarationContext ctx) {
+<span class="nc" id="L438">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitTypeList(TypeListContext ctx) {
+<span class="nc" id="L443">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitClassBody(ClassBodyContext ctx) {
+<span class="nc" id="L448">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitInterfaceBody(InterfaceBodyContext ctx) {
+<span class="nc" id="L453">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitClassBodyDeclaration(ClassBodyDeclarationContext ctx) {
+<span class="nc" id="L458">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitMemberDeclaration(MemberDeclarationContext ctx) {
+<span class="nc" id="L463">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitMethodDeclaration(MethodDeclarationContext ctx) {
+<span class="nc" id="L468">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitInterfaceBodyDeclaration(InterfaceBodyDeclarationContext ctx) {
+<span class="nc" id="L473">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitFormalParameters(FormalParametersContext ctx) {
+<span class="nc" id="L478">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitFormalParameter(FormalParameterContext ctx) {
+<span class="nc" id="L483">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitDims(DimsContext ctx) {
+<span class="fc" id="L488">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitParenthesizedExpression(ParenthesizedExpressionContext ctx) {
+<span class="fc" id="L493">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitStatement(StatementContext ctx) {
+<span class="nc" id="L498">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitSuperclass(SuperclassContext ctx) {
+<span class="nc" id="L503">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitSuperinterfaces(SuperinterfacesContext ctx) {
+<span class="nc" id="L508">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitExtendsInterfaces(ExtendsInterfacesContext ctx) {
+<span class="nc" id="L513">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitEmptyDeclaration(EmptyDeclarationContext ctx) {
+<span class="nc" id="L518">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitInitializer(InitializerContext ctx) {
+<span class="nc" id="L523">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitStaticInitializer(StaticInitializerContext ctx) {
+<span class="nc" id="L528">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitResult(ResultContext ctx) {
+<span class="nc" id="L533">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitThrows_(Throws_Context ctx) {
+<span class="nc" id="L538">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitFieldDeclaration(FieldDeclarationContext ctx) {
+<span class="nc" id="L543">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitConstructorDeclaration(ConstructorDeclarationContext ctx) {
+<span class="nc" id="L548">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitConstructorBody(ConstructorBodyContext ctx) {
+<span class="nc" id="L553">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitExplicitConstructorInvocation(ExplicitConstructorInvocationContext ctx) {
+<span class="nc" id="L558">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitInterfaceMemberDeclaration(InterfaceMemberDeclarationContext ctx) {
+<span class="nc" id="L563">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitInterfaceMethodDeclaration(InterfaceMethodDeclarationContext ctx) {
+<span class="nc" id="L568">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitConstantDeclaration(ConstantDeclarationContext ctx) {
+<span class="nc" id="L573">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitQualifiedIdentifiers(QualifiedIdentifiersContext ctx) {
+<span class="nc" id="L578">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitElseClause(ElseClauseContext ctx) {
+<span class="nc" id="L583">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitFinallyClause(FinallyClauseContext ctx) {
+<span class="nc" id="L588">		return visitChildren(ctx);</span>
+	}
+
+	@Override
+	public String visitLabeledStatement(LabeledStatementContext ctx) {
+<span class="nc" id="L593">		return visitChildren(ctx);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,6 +1,7 @@
 package org.lsmr.pdg;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -10,9 +11,16 @@ import org.lsmr.cfg.ControlFlowGraph;
 public class CIATool {
 
     public static void main(String[] args) {
+        int exit = run(args, System.out, System.err);
+        if (exit != 0) {
+            System.exit(exit);
+        }
+    }
+
+    static int run(String[] args, PrintStream out, PrintStream err) {
         if (args.length != 2) {
-            System.err.println("Usage: java org.lsmr.pdg.CIATool <source-file> <line-number>");
-            System.exit(1);
+            err.println("Usage: java org.lsmr.pdg.CIATool <source-file> <line-number>");
+            return 1;
         }
 
         Path input = Paths.get(args[0]);
@@ -20,28 +28,28 @@ public class CIATool {
         try {
             changeNode = Integer.parseInt(args[1].trim());
         } catch (NumberFormatException e) {
-            System.err.println("Line number must be an integer: " + args[1]);
-            System.exit(1);
-            return;
+            err.println("Line number must be an integer: " + args[1]);
+            return 1;
         }
 
         try {
             List<Integer> impacted = analyse(input, changeNode);
 
-            System.out.println("CHANGE_POINT: " + changeNode);
+            out.println("CHANGE_POINT: " + changeNode);
             if (impacted.isEmpty()) {
-                System.out.println("IMPACTED: (none)");
+                out.println("IMPACTED: (none)");
             } else {
                 StringBuilder sb = new StringBuilder("IMPACTED:");
                 for (int ln : impacted) sb.append(" ").append(ln);
-                System.out.println(sb);
+                out.println(sb);
             }
-            System.out.println("IMPACTED_COUNT: " + impacted.size());
+            out.println("IMPACTED_COUNT: " + impacted.size());
+            return 0;
 
         } catch (IOException e) {
-            System.err.println("Could not read file: " + input);
-            e.printStackTrace();
-            System.exit(2);
+            err.println("Could not read file: " + input);
+            e.printStackTrace(err);
+            return 2;
         }
     }
 
@@ -84,8 +92,6 @@ public class CIATool {
                 }
             }
 
-            // CRITICAL FIX: return immediately after finding the method
-            // containing the change point — do not bleed into other methods
             return new ArrayList<>(impactedSet);
         }
 
